@@ -481,6 +481,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 if (ioRatio == 100) {
                     try {
                         if (strategy > 0) {
+                            // selectKeys
                             processSelectedKeys();
                         }
                     } finally {

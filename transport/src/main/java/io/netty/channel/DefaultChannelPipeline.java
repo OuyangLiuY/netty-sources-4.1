@@ -199,14 +199,17 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline addLast(EventExecutorGroup group, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
+            // 检查handler是否符合标准
             checkMultiplicity(handler);
 
             newCtx = newContext(group, filterName(name, handler), handler);
-
+            //将ctx添加到tail前面
             addLast0(newCtx);
 
             // If the registered is false it means that the channel was not registered on an eventLoop yet.
-            // In this case we add the context to the pipeline and add a task that will call
+            // 如果已注册的为false,意味着channel尚未在事件循环器上注册.
+            // In this case we add the context to the pipeline and add a task that will call method
+            // 在本例中,我们将上下文添加到管道中,并添加一个任务,该任务将在通道注册后调用handlerAdded方法.
             // ChannelHandler.handlerAdded(...) once the channel is registered.
             if (!registered) {
                 newCtx.setAddPending();
