@@ -27,6 +27,7 @@ public interface EventLoopGroup extends EventExecutorGroup {
      * Return the next {@link EventLoop} to use
      */
     @Override
+    // EventLoopGroup 中链接起来得下一个 EventLoop，也就是循环获取下一个
     EventLoop next();
 
     /**

@@ -81,6 +81,7 @@ public interface EventExecutorGroup extends ScheduledExecutorService, Iterable<E
     /**
      * Returns one of the {@link EventExecutor}s managed by this {@link EventExecutorGroup}.
      */
+    // 返回一个 EventExecutor， 负载均衡
     EventExecutor next();
 
     @Override

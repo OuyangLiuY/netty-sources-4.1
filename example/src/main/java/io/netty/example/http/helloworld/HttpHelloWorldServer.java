@@ -56,7 +56,7 @@ public final class HttpHelloWorldServer {
              .channel(NioServerSocketChannel.class)
              .handler(new LoggingHandler(LogLevel.INFO))
              .childHandler(new HttpHelloWorldServerInitializer(sslCtx));
-
+            // sync(),等待绑定端口成功，然后获取到 channel
             Channel ch = b.bind(PORT).sync().channel();
 
             System.err.println("Open your web browser and navigate to " +

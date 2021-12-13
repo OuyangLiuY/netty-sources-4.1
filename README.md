@@ -62,3 +62,9 @@ are listed below:
 
 Automatic modules do not provide any means to declare dependencies, so you need to list each used module separately
 in your `module-info` file.
+
+Mark：
+1.promise 内存管理
+2.NioEventLoopGroup、EventExecutor
+3.监听器，当前一个线程执行完之后，如果感知到，异步操作。
+4. 泛型：LocalVariableTypeTable
