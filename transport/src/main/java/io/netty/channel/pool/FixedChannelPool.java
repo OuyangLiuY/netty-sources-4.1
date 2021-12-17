@@ -408,17 +408,21 @@ public class FixedChannelPool extends SimpleChannelPool {
         @Override
         public void operationComplete(Future<Channel> future) throws Exception {
             assert executor.inEventLoop();
-
+            // Channel已经关闭了，那么自己的Channel也关闭，通讯
             if (closed) {
+                // 执行结果的值是正确的，
                 if (future.isSuccess()) {
                     // Since the pool is closed, we have no choice but to close the channel
+                    // 直接获取结果
                     future.getNow().close();
                 }
+                // 抛出异常
                 originalPromise.setFailure(new IllegalStateException("FixedChannelPool was closed"));
                 return;
             }
 
             if (future.isSuccess()) {
+                // 设置成功结果，
                 originalPromise.setSuccess(future.getNow());
             } else {
                 if (acquired) {
@@ -426,7 +430,7 @@ public class FixedChannelPool extends SimpleChannelPool {
                 } else {
                     runTaskQueue();
                 }
-
+                // 执行任务时失败，设置失败结果
                 originalPromise.setFailure(future.cause());
             }
         }

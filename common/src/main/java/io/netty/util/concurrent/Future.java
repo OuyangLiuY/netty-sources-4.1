@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
  * The result of an asynchronous operation.
  */
 @SuppressWarnings("ClassNameSameAsAncestorName")
+// 自定义了异步执行结果接口方法。继承Java并发包中Future接口
 public interface Future<V> extends java.util.concurrent.Future<V> {
 
     /**
@@ -52,6 +53,7 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
      * {@linkplain #isDone() done}.  If this future is already
      * completed, the specified listener is notified immediately.
      */
+    // 因为要异步返回当前执行的结果，需要通过监听器 进行回调处理。
     Future<V> addListener(GenericFutureListener<? extends Future<? super V>> listener);
 
     /**
@@ -84,6 +86,7 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
      * Waits for this future until it is done, and rethrows the cause of the failure if this future
      * failed.
      */
+    // 同步获取，相当于调用future接口中的get方法
     Future<V> sync() throws InterruptedException;
 
     /**
@@ -157,6 +160,7 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
      * As it is possible that a {@code null} value is used to mark the future as successful you also need to check
      * if the future is really done with {@link #isDone()} and not rely on the returned {@code null} value.
      */
+    // 不阻塞获取结果，如果没有执行完毕，那么结果返回空
     V getNow();
 
     /**
@@ -165,5 +169,6 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
      * If the cancellation was successful it will fail the future with a {@link CancellationException}.
      */
     @Override
+    // 取消当前执行的任务，
     boolean cancel(boolean mayInterruptIfRunning);
 }

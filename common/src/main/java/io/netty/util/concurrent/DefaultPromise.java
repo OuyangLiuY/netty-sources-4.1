@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+// 真正实现可以异步获取执行结果，并回调结果生成通知的类，类比 java.util.concurrent.FutureTask,
+// 可以通过重写FutureTask的done方法，来实现结果回调
 public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(DefaultPromise.class);
     private static final InternalLogger rejectedExecutionLogger =
@@ -48,6 +50,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     private static final StackTraceElement[] CANCELLATION_STACK = CANCELLATION_CAUSE_HOLDER.cause.getStackTrace();
 
     private volatile Object result;
+    // 执行提交异步任务的执行器
     private final EventExecutor executor;
     /**
      * One or more listeners. Can be a {@link GenericFutureListener} or a {@link DefaultFutureListeners}.
@@ -55,6 +58,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
      *
      * Threading - synchronized(this). We must support adding listeners when there is no EventExecutor.
      */
+    // 监听器对象
     private Object listeners;
     /**
      * Threading - synchronized(this). We are required to hold the monitor to use Java's underlying wait()/notifyAll().
@@ -65,6 +69,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
      * Threading - synchronized(this). We must prevent concurrent notification and FIFO listener notification if the
      * executor changes.
      */
+    // 通知状态
     private boolean notifyingListeners;
 
     /**
@@ -322,6 +327,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     @Override
     public V getNow() {
         Object result = this.result;
+        // 状态
         if (result instanceof CauseHolder || result == SUCCESS || result == UNCANCELLABLE) {
             return null;
         }
@@ -479,8 +485,12 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                 checkNotNull(listener, "listener"));
     }
 
+    // 这里才是执行通知任务，也是异步
     private void notifyListeners() {
+        // 异步执行器，也就是执行线程
         EventExecutor executor = executor();
+        // 如果 executor 在EventLoop中，说明当前线程是 被EventExecutorGroup所持有，那么直接调用即可，
+        // 因为当前executor就是用来做异步执行的操作
         if (executor.inEventLoop()) {
             final InternalThreadLocalMap threadLocals = InternalThreadLocalMap.get();
             final int stackDepth = threadLocals.futureListenerStackDepth();
@@ -494,7 +504,8 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                 return;
             }
         }
-
+        // 有可能executor对象是自己创建但是不属于group，
+        // 那么自己另起一个线程去异步执行 通知，以达到异步效果
         safeExecute(executor, new Runnable() {
             @Override
             public void run() {
@@ -535,6 +546,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private void notifyListenersNow() {
         Object listeners;
+        // 同步，检查当前 listeners 是否可用，避免另外一个线程，执行，在我还没有通知之前
         synchronized (this) {
             // Only proceed if there are listeners to notify and we are not already notifying listeners.
             if (notifyingListeners || this.listeners == null) {
@@ -545,11 +557,14 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             this.listeners = null;
         }
         for (;;) {
+            // 集合对象
             if (listeners instanceof DefaultFutureListeners) {
                 notifyListeners0((DefaultFutureListeners) listeners);
             } else {
+                // 单个监听器对象
                 notifyListener0(this, (GenericFutureListener<?>) listeners);
             }
+            // 调用通知之后，恢复listeners
             synchronized (this) {
                 if (this.listeners == null) {
                     // Nothing can throw from within this method, so setting notifyingListeners back to false does not
@@ -564,8 +579,10 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     private void notifyListeners0(DefaultFutureListeners listeners) {
+        // 获取集合对象
         GenericFutureListener<?>[] a = listeners.listeners();
         int size = listeners.size();
+        // 遍历调用
         for (int i = 0; i < size; i ++) {
             notifyListener0(this, a[i]);
         }
@@ -574,6 +591,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private static void notifyListener0(Future future, GenericFutureListener l) {
         try {
+            // 回调函数，其他子类实现，用来达到，异步获取结果的目的
             l.operationComplete(future);
         } catch (Throwable t) {
             if (logger.isWarnEnabled()) {
@@ -623,6 +641,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
      * Check if there are any waiters and if so notify these.
      * @return {@code true} if there are any listeners attached to the promise, {@code false} otherwise.
      */
+    // 检查一下是否有可以调用的监听器对象
     private synchronized boolean checkNotifyWaiters() {
         if (waiters > 0) {
             notifyAll();
