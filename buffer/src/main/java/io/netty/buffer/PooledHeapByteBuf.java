@@ -32,11 +32,11 @@ class PooledHeapByteBuf extends PooledByteBuf<byte[]> {
         public PooledHeapByteBuf newObject(Handle<PooledHeapByteBuf> handle) {
             return new PooledHeapByteBuf(handle, 0);
         }
-    });
+    });                                                     // 默认第一创建该对象的时候就进行了池化
 
     static PooledHeapByteBuf newInstance(int maxCapacity) {
         PooledHeapByteBuf buf = RECYCLER.get();
-        buf.reuse(maxCapacity);
+        buf.reuse(maxCapacity);                             // 重用对象，重置一下内置参数
         return buf;
     }
 

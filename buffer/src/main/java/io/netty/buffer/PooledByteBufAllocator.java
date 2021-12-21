@@ -263,7 +263,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
                                   int smallCacheSize, int normalCacheSize,
                                   boolean useCacheForAllThreads, int directMemoryCacheAlignment) {
         super(preferDirect);
-        threadCache = new PoolThreadLocalCache(useCacheForAllThreads);
+        threadCache = new PoolThreadLocalCache(useCacheForAllThreads);  // 默认所有线程使用缓存
         this.smallCacheSize = smallCacheSize;
         this.normalCacheSize = normalCacheSize;
         chunkSize = validateAndCalculateChunkSize(pageSize, maxOrder);
@@ -275,7 +275,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
         if (directMemoryCacheAlignment > 0 && !isDirectMemoryCacheAlignmentSupported()) {
             throw new IllegalArgumentException("directMemoryCacheAlignment is not supported");
         }
-
+        // 检查是否是2^n
         if ((directMemoryCacheAlignment & -directMemoryCacheAlignment) != directMemoryCacheAlignment) {
             throw new IllegalArgumentException("directMemoryCacheAlignment: "
                     + directMemoryCacheAlignment + " (expected: power of two)");
@@ -284,7 +284,8 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
         int pageShifts = validateAndCalculatePageShifts(pageSize);
 
         if (nHeapArena > 0) {
-            heapArenas = newArenaArray(nHeapArena);
+            // nHeapArena 默认情况cpu核心数*2(C中默认是*4)
+            heapArenas = newArenaArray(nHeapArena); // 创建堆缓冲区arena
             List<PoolArenaMetric> metrics = new ArrayList<PoolArenaMetric>(heapArenas.length);
             for (int i = 0; i < heapArenas.length; i ++) {
                 PoolArena.HeapArena arena = new PoolArena.HeapArena(this,
@@ -300,7 +301,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
         }
 
         if (nDirectArena > 0) {
-            directArenas = newArenaArray(nDirectArena);
+            directArenas = newArenaArray(nDirectArena); // 创建直接缓冲区arena
             List<PoolArenaMetric> metrics = new ArrayList<PoolArenaMetric>(directArenas.length);
             for (int i = 0; i < directArenas.length; i ++) {
                 PoolArena.DirectArena arena = new PoolArena.DirectArena(
@@ -352,13 +353,13 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
     }
 
     @Override
-    protected ByteBuf newHeapBuffer(int initialCapacity, int maxCapacity) {
+    protected ByteBuf newHeapBuffer(int initialCapacity, int maxCapacity) { // 创建堆buffer
         PoolThreadCache cache = threadCache.get();
-        PoolArena<byte[]> heapArena = cache.heapArena;
+        PoolArena<byte[]> heapArena = cache.heapArena;                      // 拿到缓存得堆arena
 
         final ByteBuf buf;
         if (heapArena != null) {
-            buf = heapArena.allocate(cache, initialCapacity, maxCapacity);
+            buf = heapArena.allocate(cache, initialCapacity, maxCapacity);  // arena 存在直接分配
         } else {
             buf = PlatformDependent.hasUnsafe() ?
                     new UnpooledUnsafeHeapByteBuf(this, initialCapacity, maxCapacity) :

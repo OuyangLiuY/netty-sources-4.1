@@ -124,30 +124,30 @@ abstract class PoolArena<T> extends SizeClasses implements PoolArenaMetric {
     abstract boolean isDirect();
 
     PooledByteBuf<T> allocate(PoolThreadCache cache, int reqCapacity, int maxCapacity) {
-        PooledByteBuf<T> buf = newByteBuf(maxCapacity);
-        allocate(cache, buf, reqCapacity);
+        PooledByteBuf<T> buf = newByteBuf(maxCapacity);         // 创建池化得heapByteBuf
+        allocate(cache, buf, reqCapacity);                      // 分配内存
         return buf;
     }
 
     private void allocate(PoolThreadCache cache, PooledByteBuf<T> buf, final int reqCapacity) {
-        final int sizeIdx = size2SizeIdx(reqCapacity);
+        final int sizeIdx = size2SizeIdx(reqCapacity);          // 拿到需要分配内存大小的索引位置
 
-        if (sizeIdx <= smallMaxSizeIdx) {
+        if (sizeIdx <= smallMaxSizeIdx) {                               // 小容量分配 256分配
             tcacheAllocateSmall(cache, buf, reqCapacity, sizeIdx);
         } else if (sizeIdx < nSizes) {
-            tcacheAllocateNormal(cache, buf, reqCapacity, sizeIdx);
+            tcacheAllocateNormal(cache, buf, reqCapacity, sizeIdx);     // 正常分配，也就是64
         } else {
             int normCapacity = directMemoryCacheAlignment > 0
                     ? normalizeSize(reqCapacity) : reqCapacity;
             // Huge allocations are never served via the cache so just call allocateHuge
-            allocateHuge(buf, normCapacity);
+            allocateHuge(buf, normCapacity);                            // 大容量分配
         }
     }
 
     private void tcacheAllocateSmall(PoolThreadCache cache, PooledByteBuf<T> buf, final int reqCapacity,
                                      final int sizeIdx) {
 
-        if (cache.allocateSmall(this, buf, reqCapacity, sizeIdx)) {
+        if (cache.allocateSmall(this, buf, reqCapacity, sizeIdx)) {     // 尝试从缓冲中分配已经被释放的内存
             // was able to allocate out of the cache so move on
             return;
         }
@@ -196,12 +196,12 @@ abstract class PoolArena<T> extends SizeClasses implements PoolArenaMetric {
             q025.allocate(buf, reqCapacity, sizeIdx, threadCache) ||
             q000.allocate(buf, reqCapacity, sizeIdx, threadCache) ||
             qInit.allocate(buf, reqCapacity, sizeIdx, threadCache) ||
-            q075.allocate(buf, reqCapacity, sizeIdx, threadCache)) {
+            q075.allocate(buf, reqCapacity, sizeIdx, threadCache)) {            // 只要有一个能分配成功，那么就直接返回
             return;
         }
 
         // Add a new chunk.
-        PoolChunk<T> c = newChunk(pageSize, nPSizes, pageShifts, chunkSize);
+        PoolChunk<T> c = newChunk(pageSize, nPSizes, pageShifts, chunkSize);    // 否则就要重新创建一个chunk
         boolean success = c.allocate(buf, reqCapacity, sizeIdx, threadCache);
         assert success;
         qInit.add(c);

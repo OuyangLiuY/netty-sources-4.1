@@ -22,6 +22,7 @@ import io.netty.util.Recycler;
  *
  * @param <T> the type of the pooled object
  */
+// 轻量级对象池，集中管理池中得对象，减少频繁创建和销毁长期使用得对象
 public abstract class ObjectPool<T> {
 
     ObjectPool() { }

@@ -141,7 +141,7 @@ abstract class SizeClasses implements SizeClassesMetric {
     // spacing is 1 << LOG2_QUANTUM, so the size of array is lookupMaxclass >> LOG2_QUANTUM
     private final int[] size2idxTab;
 
-    private int sizeClasses() {
+    private int sizeClasses() {                 // 初始化sizeClass
         int normalMaxSize = -1;
 
         int index = 0;
@@ -305,7 +305,7 @@ abstract class SizeClasses implements SizeClassesMetric {
         if (size == 0) {
             return 0;
         }
-        if (size > chunkSize) {
+        if (size > chunkSize) {                                     // 大于chunkSize直接返回sizeClasses
             return nSizes;
         }
 
@@ -313,9 +313,9 @@ abstract class SizeClasses implements SizeClassesMetric {
             size = alignSize(size);
         }
 
-        if (size <= lookupMaxSize) {
+        if (size <= lookupMaxSize) {                                // size 小于最大的lookupMaxSize，那么说明当前sizeClass中可以拿到
             //size-1 / MIN_TINY
-            return size2idxTab[size - 1 >> LOG2_QUANTUM];
+            return size2idxTab[size - 1 >> LOG2_QUANTUM];           // 查找索引，因为此表size2idxTab，再sizeClass初始化的时候已经创好了
         }
 
         int x = log2((size << 1) - 1);

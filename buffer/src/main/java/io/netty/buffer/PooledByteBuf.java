@@ -163,7 +163,7 @@ abstract class PooledByteBuf<T> extends AbstractReferenceCountedByteBuf {
     protected abstract ByteBuffer newInternalNioBuffer(T memory);
 
     @Override
-    protected final void deallocate() {
+    protected final void deallocate() {     // 解除分配得内存
         if (handle >= 0) {
             final long handle = this.handle;
             this.handle = -1;
@@ -171,7 +171,7 @@ abstract class PooledByteBuf<T> extends AbstractReferenceCountedByteBuf {
             chunk.arena.free(chunk, tmpNioBuf, handle, maxLength, cache);
             tmpNioBuf = null;
             chunk = null;
-            recycle();
+            recycle();                      // 将PooledByteBuf的子类对象进行放入到池子中，以便于下次直接使用，不需再创建
         }
     }
 

@@ -404,6 +404,12 @@
       <classifier>${tcnative.classifier}</classifier>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+          <version>4.1.50.Final</version>
+          <scope>compile</scope>
+      </dependency>
   </dependencies>
 
   <build>

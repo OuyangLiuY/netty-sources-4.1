@@ -357,6 +357,7 @@ final class PoolThreadCache {
          * Add to cache if not already full.
          */
         @SuppressWarnings("unchecked")
+        // 当调用解除分配(deallocate)或者重新分配(reallocate)得时候,会先将其添加到缓存队列中
         public final boolean add(PoolChunk<T> chunk, ByteBuffer nioBuffer, long handle, int normCapacity) {
             Entry<T> entry = newEntry(chunk, nioBuffer, handle, normCapacity);
             boolean queued = queue.offer(entry);

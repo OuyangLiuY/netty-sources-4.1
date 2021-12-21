@@ -28,10 +28,10 @@ final class PooledUnsafeHeapByteBuf extends PooledHeapByteBuf {
         public PooledUnsafeHeapByteBuf newObject(Handle<PooledUnsafeHeapByteBuf> handle) {
             return new PooledUnsafeHeapByteBuf(handle, 0);
         }
-    });
+    });     // 当前对象创建得时候，默认已经将对象放到对象池中
 
     static PooledUnsafeHeapByteBuf newUnsafeInstance(int maxCapacity) {
-        PooledUnsafeHeapByteBuf buf = RECYCLER.get();
+        PooledUnsafeHeapByteBuf buf = RECYCLER.get();       // 从对象池中拿到对象
         buf.reuse(maxCapacity);
         return buf;
     }
