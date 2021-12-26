@@ -41,7 +41,7 @@ public class EchoClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-        System.out.println("");
+        System.out.println();
         ctx.writeAndFlush(firstMessage);
     }
 

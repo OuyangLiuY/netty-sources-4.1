@@ -68,3 +68,22 @@ Mark：
 2.NioEventLoopGroup、EventExecutor
 3.监听器，当前一个线程执行完之后，如果感知到，异步操作。
 4. 泛型：LocalVariableTypeTable
+
+
+## 笔记：
+
+## 内存泄漏：
+
+当你分配出1KB得内存，结果再也没有用到，那么就泄露了
+解决方案：
+### 堆内存：
+
+### 堆外内存：
+1.NMT 堆外内存溢出
+2.自带得，比如netty得管理
+### JNI内存泄漏
+使用unsafe 去自己alloc分配内存
+1.pmap
+2.gperftools（tcmalloc内存分配函数，这两者一起使用，可分析内存分配情况）
+## 内存溢出：
+当你分配了1KB得内存，结果你用2KB内存，那么就溢出出去了

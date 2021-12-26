@@ -37,7 +37,7 @@ public class KQueueSocketRstTest extends SocketRstTest {
 
     @Override
     protected void assertRstOnCloseException(IOException cause, Channel clientChannel) {
-        if (!AbstractKQueueChannel.class.isInstance(clientChannel)) {
+        if (!(clientChannel instanceof AbstractKQueueChannel)) {
             super.assertRstOnCloseException(cause, clientChannel);
             return;
         }

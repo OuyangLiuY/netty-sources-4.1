@@ -273,10 +273,7 @@ public class HttpObjectAggregatorTest {
         if (HttpUtil.is100ContinueExpected(message)) {
             return false;
         }
-        if (HttpUtil.isKeepAlive(message)) {
-            return false;
-        }
-        return true;
+        return !HttpUtil.isKeepAlive(message);
     }
 
     @Test
@@ -620,9 +617,7 @@ public class HttpObjectAggregatorTest {
                     HttpRequest request = (HttpRequest) msg;
                     HttpMethod method = request.method();
 
-                    if (method.equals(HttpMethod.POST)) {
-                        return true;
-                    }
+                    return method.equals(HttpMethod.POST);
                 }
 
                 return false;
@@ -680,9 +675,7 @@ public class HttpObjectAggregatorTest {
                     HttpHeaders headers = response.headers();
 
                     String contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
-                    if (AsciiString.contentEqualsIgnoreCase(contentType, HttpHeaderValues.TEXT_PLAIN)) {
-                        return true;
-                    }
+                    return AsciiString.contentEqualsIgnoreCase(contentType, HttpHeaderValues.TEXT_PLAIN);
                 }
 
                 return false;

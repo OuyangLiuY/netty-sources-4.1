@@ -98,7 +98,7 @@ public class NoPriorityByteDistributionBenchmark extends AbstractMicrobenchmark 
         }
     }
 
-    private Http2StreamVisitor invocationVisitor = new Http2StreamVisitor() {
+    private final Http2StreamVisitor invocationVisitor = new Http2StreamVisitor() {
         @Override
         public boolean visit(Http2Stream stream) throws Http2Exception {
             // Restore the connection window.
@@ -175,7 +175,7 @@ public class NoPriorityByteDistributionBenchmark extends AbstractMicrobenchmark 
     }
 
     private DataRefresher dataRefresher(Http2Stream stream) {
-        return (DataRefresher) stream.getProperty(dataRefresherKey);
+        return stream.getProperty(dataRefresherKey);
     }
 
     private void addData(Http2Stream stream, final int dataSize) {

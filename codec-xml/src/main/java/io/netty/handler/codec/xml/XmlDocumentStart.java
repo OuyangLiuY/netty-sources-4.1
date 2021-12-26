@@ -72,11 +72,7 @@ public class XmlDocumentStart {
         if (encodingScheme != null ? !encodingScheme.equals(that.encodingScheme) : that.encodingScheme != null) {
             return false;
         }
-        if (version != null ? !version.equals(that.version) : that.version != null) {
-            return false;
-        }
-
-        return true;
+        return version != null ? version.equals(that.version) : that.version == null;
     }
 
     @Override

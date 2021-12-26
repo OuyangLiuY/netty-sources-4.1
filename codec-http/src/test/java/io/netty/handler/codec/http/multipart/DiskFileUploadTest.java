@@ -119,7 +119,7 @@ public class DiskFileUploadTest {
             assertEquals(json, f1.getString());
             assertArrayEquals(bytes, f1.get());
             File file = f1.getFile();
-            assertEquals((long) bytes.length, file.length());
+            assertEquals(bytes.length, file.length());
             FileInputStream fis = new FileInputStream(file);
             try {
                 byte[] buf = new byte[bytes.length];
@@ -152,7 +152,7 @@ public class DiskFileUploadTest {
             assertEquals(json, f1.getString());
             assertArrayEquals(bytes, f1.get());
             File file = f1.getFile();
-            assertEquals((long) bytes.length, file.length());
+            assertEquals(bytes.length, file.length());
             assertArrayEquals(bytes, doReadFile(file, bytes.length));
         } finally {
             f1.delete();
@@ -172,7 +172,7 @@ public class DiskFileUploadTest {
                 assertEquals(json, f1.getString());
                 assertArrayEquals(bytes, f1.get());
                 File file = f1.getFile();
-                assertEquals((long) bytes.length, file.length());
+                assertEquals(bytes.length, file.length());
                 assertArrayEquals(bytes, doReadFile(file, bytes.length));
             } finally {
                 buf.release();

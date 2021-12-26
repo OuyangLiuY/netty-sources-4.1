@@ -224,7 +224,7 @@ public class AsciiStringCharacterTest {
 
     @Test
     public void caseInsensitiveHasherCharBuffer() {
-        String s1 = new String("TRANSFER-ENCODING");
+        String s1 = "TRANSFER-ENCODING";
         char[] array = new char[128];
         final int offset = 100;
         for (int i = 0; i < s1.length(); ++i) {

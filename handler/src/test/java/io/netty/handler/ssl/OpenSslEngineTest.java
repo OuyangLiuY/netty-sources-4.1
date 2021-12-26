@@ -194,9 +194,7 @@ public class OpenSslEngineTest extends SSLEngineTest {
                     return false;
                 }
                 int bugfix = Integer.parseInt(versionParts[2]);
-                if (bugfix > 0) {
-                    return false;
-                }
+                return bugfix <= 0;
             }
         }
         return true;

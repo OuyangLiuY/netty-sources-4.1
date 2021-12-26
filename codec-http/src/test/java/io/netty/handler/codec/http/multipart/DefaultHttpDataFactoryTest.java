@@ -67,10 +67,10 @@ public class DefaultHttpDataFactoryTest {
         final Attribute attr = defaultHttpDataFactory.createAttribute(req1, "attribute1");
         final FileUpload fu = defaultHttpDataFactory.createFileUpload(
                 req1, "attribute1", "f.txt", "text/plain", null, null, 0);
-        assertEquals(dir, DiskAttribute.class.cast(attr).getBaseDirectory());
-        assertEquals(dir, DiskFileUpload.class.cast(fu).getBaseDirectory());
-        assertTrue(DiskAttribute.class.cast(attr).deleteOnExit());
-        assertTrue(DiskFileUpload.class.cast(fu).deleteOnExit());
+        assertEquals(dir, ((DiskAttribute) attr).getBaseDirectory());
+        assertEquals(dir, ((DiskFileUpload) fu).getBaseDirectory());
+        assertTrue(((DiskAttribute) attr).deleteOnExit());
+        assertTrue(((DiskFileUpload) fu).deleteOnExit());
     }
 
     @Test

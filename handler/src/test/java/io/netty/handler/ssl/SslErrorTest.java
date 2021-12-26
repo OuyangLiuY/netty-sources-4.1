@@ -293,8 +293,7 @@ public class SslErrorTest {
             }
         }
         Throwable error = new AssertionError("message not contains any of '"
-                + Arrays.toString(messageParts) + "': " + message);
-        error.initCause(cause);
+                + Arrays.toString(messageParts) + "': " + message, cause);
         promise.setFailure(error);
     }
 

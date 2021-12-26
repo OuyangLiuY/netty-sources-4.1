@@ -47,11 +47,7 @@ public class XmlElementStart extends XmlElement {
 
         XmlElementStart that = (XmlElementStart) o;
 
-        if (attributes != null ? !attributes.equals(that.attributes) : that.attributes != null) {
-            return false;
-        }
-
-        return true;
+        return attributes != null ? attributes.equals(that.attributes) : that.attributes == null;
     }
 
     @Override

@@ -65,7 +65,7 @@ public final class EmptyPriorityQueue<T> implements PriorityQueue<T> {
 
     @Override
     public Iterator<T> iterator() {
-        return Collections.<T>emptyList().iterator();
+        return Collections.emptyIterator();
     }
 
     @Override

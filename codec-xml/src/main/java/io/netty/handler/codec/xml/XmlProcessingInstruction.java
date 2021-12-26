@@ -50,11 +50,7 @@ public class XmlProcessingInstruction {
         if (data != null ? !data.equals(that.data) : that.data != null) {
             return false;
         }
-        if (target != null ? !target.equals(that.target) : that.target != null) {
-            return false;
-        }
-
-        return true;
+        return target != null ? target.equals(that.target) : that.target == null;
     }
 
     @Override

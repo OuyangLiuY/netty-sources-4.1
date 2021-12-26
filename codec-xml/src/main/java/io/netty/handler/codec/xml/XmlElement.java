@@ -72,11 +72,7 @@ public abstract class XmlElement {
         if (namespaces != null ? !namespaces.equals(that.namespaces) : that.namespaces != null) {
             return false;
         }
-        if (prefix != null ? !prefix.equals(that.prefix) : that.prefix != null) {
-            return false;
-        }
-
-        return true;
+        return prefix != null ? prefix.equals(that.prefix) : that.prefix == null;
     }
 
     @Override

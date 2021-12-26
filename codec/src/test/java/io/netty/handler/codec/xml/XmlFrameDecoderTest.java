@@ -103,8 +103,8 @@ public class XmlFrameDecoderTest {
 
     @Test
     public void testDecodeInvalidXml() {
-        testDecodeWithXml("<a></", new Object[0]);
-        testDecodeWithXml("<a></a", new Object[0]);
+        testDecodeWithXml("<a></");
+        testDecodeWithXml("<a></a");
     }
 
     @Test

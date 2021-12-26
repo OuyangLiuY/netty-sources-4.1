@@ -101,7 +101,7 @@ public class InboundHttp2ToHttpAdapter extends Http2EventAdapter {
      * @return The {@link FullHttpMessage} associated with {@code stream}.
      */
     protected final FullHttpMessage getMessage(Http2Stream stream) {
-        return (FullHttpMessage) stream.getProperty(messageKey);
+        return stream.getProperty(messageKey);
     }
 
     /**

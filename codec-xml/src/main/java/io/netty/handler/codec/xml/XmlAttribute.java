@@ -78,11 +78,7 @@ public class XmlAttribute {
         if (type != null ? !type.equals(that.type) : that.type != null) {
             return false;
         }
-        if (value != null ? !value.equals(that.value) : that.value != null) {
-            return false;
-        }
-
-        return true;
+        return value != null ? value.equals(that.value) : that.value == null;
     }
 
     @Override

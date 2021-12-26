@@ -50,11 +50,7 @@ public class XmlNamespace {
         if (prefix != null ? !prefix.equals(that.prefix) : that.prefix != null) {
             return false;
         }
-        if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
-            return false;
-        }
-
-        return true;
+        return uri != null ? uri.equals(that.uri) : that.uri == null;
     }
 
     @Override

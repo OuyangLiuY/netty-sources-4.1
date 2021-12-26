@@ -54,7 +54,7 @@ public class Http2ClientUpgradeCodec implements HttpClientUpgradeHandler.Upgrade
     }
 
     public Http2ClientUpgradeCodec(String handlerName, Http2FrameCodec frameCodec, ChannelHandler upgradeToHandler) {
-        this(handlerName, (Http2ConnectionHandler) frameCodec, upgradeToHandler, null);
+        this(handlerName, frameCodec, upgradeToHandler, null);
     }
 
     /**
@@ -76,7 +76,7 @@ public class Http2ClientUpgradeCodec implements HttpClientUpgradeHandler.Upgrade
      */
     public Http2ClientUpgradeCodec(Http2ConnectionHandler connectionHandler,
         Http2MultiplexHandler http2MultiplexHandler) {
-        this((String) null, connectionHandler, http2MultiplexHandler);
+        this(null, connectionHandler, http2MultiplexHandler);
     }
 
     /**

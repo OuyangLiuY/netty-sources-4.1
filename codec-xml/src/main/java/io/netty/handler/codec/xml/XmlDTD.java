@@ -41,11 +41,7 @@ public class XmlDTD {
 
         XmlDTD xmlDTD = (XmlDTD) o;
 
-        if (text != null ? !text.equals(xmlDTD.text) : xmlDTD.text != null) {
-            return false;
-        }
-
-        return true;
+        return text != null ? text.equals(xmlDTD.text) : xmlDTD.text == null;
     }
 
     @Override

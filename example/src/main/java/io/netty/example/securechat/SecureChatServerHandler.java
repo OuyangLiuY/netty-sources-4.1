@@ -66,7 +66,7 @@ public class SecureChatServerHandler extends SimpleChannelInboundHandler<String>
         }
 
         // Close the connection if the client has sent 'bye'.
-        if ("bye".equals(msg.toLowerCase())) {
+        if ("bye".equalsIgnoreCase(msg)) {
             ctx.close();
         }
     }

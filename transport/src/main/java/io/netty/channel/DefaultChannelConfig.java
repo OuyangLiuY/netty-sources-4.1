@@ -132,7 +132,7 @@ public class DefaultChannelConfig implements ChannelConfig {
             return (T) getAllocator();
         }
         if (option == RCVBUF_ALLOCATOR) {
-            return (T) getRecvByteBufAllocator();
+            return getRecvByteBufAllocator();
         }
         if (option == AUTO_READ) {
             return (T) Boolean.valueOf(isAutoRead());

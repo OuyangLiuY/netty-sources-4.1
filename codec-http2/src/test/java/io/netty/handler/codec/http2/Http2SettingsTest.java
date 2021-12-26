@@ -66,14 +66,14 @@ public class Http2SettingsTest {
     @Test
     public void nonStandardSettingsShouldBeSet() {
         char key = 0;
-        settings.put(key, (Long) 123L);
+        settings.put(key, 123L);
         assertEquals(123L, (long) settings.get(key));
     }
 
     @Test
     public void settingsShouldSupportUnsignedShort() {
         char key = (char) (Short.MAX_VALUE + 1);
-        settings.put(key, (Long) 123L);
+        settings.put(key, 123L);
         assertEquals(123L, (long) settings.get(key));
     }
 
@@ -90,13 +90,13 @@ public class Http2SettingsTest {
 
     @Test
     public void headerTableSizeUnsignedInt() {
-        settings.put(Http2CodecUtil.SETTINGS_HEADER_TABLE_SIZE, (Long) MAX_UNSIGNED_INT);
+        settings.put(Http2CodecUtil.SETTINGS_HEADER_TABLE_SIZE, MAX_UNSIGNED_INT);
         assertEquals(MAX_UNSIGNED_INT, (long) settings.get(Http2CodecUtil.SETTINGS_HEADER_TABLE_SIZE));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void headerTableSizeBoundCheck() {
-        settings.put(Http2CodecUtil.SETTINGS_HEADER_TABLE_SIZE, (Long) Long.MAX_VALUE);
+        settings.put(Http2CodecUtil.SETTINGS_HEADER_TABLE_SIZE, Long.MAX_VALUE);
     }
 
     @Test(expected = IllegalArgumentException.class)

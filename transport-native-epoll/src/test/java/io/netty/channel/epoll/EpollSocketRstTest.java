@@ -37,7 +37,7 @@ public class EpollSocketRstTest extends SocketRstTest {
 
     @Override
     protected void assertRstOnCloseException(IOException cause, Channel clientChannel) {
-        if (!AbstractEpollChannel.class.isInstance(clientChannel)) {
+        if (!(clientChannel instanceof AbstractEpollChannel)) {
             super.assertRstOnCloseException(cause, clientChannel);
             return;
         }

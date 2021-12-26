@@ -66,7 +66,7 @@ public final class SecureChatClient {
 
                 // If user typed the 'bye' command, wait until the server closes
                 // the connection.
-                if ("bye".equals(line.toLowerCase())) {
+                if ("bye".equalsIgnoreCase(line)) {
                     ch.closeFuture().sync();
                     break;
                 }

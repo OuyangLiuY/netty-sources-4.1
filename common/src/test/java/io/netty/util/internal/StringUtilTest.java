@@ -541,7 +541,7 @@ public class StringUtilTest {
     @Test
     public void testJoin() {
         assertEquals("",
-                     StringUtil.join(",", Collections.<CharSequence>emptyList()).toString());
+                     StringUtil.join(",", Collections.emptyList()).toString());
         assertEquals("a",
                      StringUtil.join(",", Collections.singletonList("a")).toString());
         assertEquals("a,b",

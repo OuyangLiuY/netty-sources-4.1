@@ -321,9 +321,7 @@ public class SpdyHttpEncoder extends MessageToMessageEncoder<HttpObject> {
     private static boolean isLast(HttpMessage httpMessage) {
         if (httpMessage instanceof FullHttpMessage) {
             FullHttpMessage fullMessage = (FullHttpMessage) httpMessage;
-            if (fullMessage.trailingHeaders().isEmpty() && !fullMessage.content().isReadable()) {
-                return true;
-            }
+            return fullMessage.trailingHeaders().isEmpty() && !fullMessage.content().isReadable();
         }
 
         return false;

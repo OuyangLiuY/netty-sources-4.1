@@ -84,7 +84,7 @@ public final class MemcacheClient {
                 if (line == null) {
                     break;
                 }
-                if ("quit".equals(line.toLowerCase())) {
+                if ("quit".equalsIgnoreCase(line)) {
                     ch.close().sync();
                     break;
                 }

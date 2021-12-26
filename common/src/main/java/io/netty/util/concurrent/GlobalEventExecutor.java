@@ -46,7 +46,7 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor im
 
     final BlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<Runnable>();
     final ScheduledFutureTask<Void> quietPeriodTask = new ScheduledFutureTask<Void>(
-            this, Executors.<Void>callable(new Runnable() {
+            this, Executors.callable(new Runnable() {
         @Override
         public void run() {
             // NOOP
