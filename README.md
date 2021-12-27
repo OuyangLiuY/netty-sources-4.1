@@ -1,64 +1,75 @@
-# Netty Project
+# Netty
 
-Netty is an asynchronous event-driven network application framework for rapid development of maintainable high performance protocol servers & clients.
+## 1、Netty本地导入IDEA编译
 
-## Links
+```sh
+# 1.导入，使用4.1.42版本
+git clone git@github.com:OuyangLiuY/netty-sources-4.1.git -b 4.1.42
+# 2.项目配置JDK1.8
+# 3.进入common目录，执行如下命令
+mvn install -Dmaven.test.skip=true -Dcheckstyle.skip=true
+# 4.刷新maven工程，build即可
+```
 
-* [Web Site](https://netty.io/)
-* [Downloads](https://netty.io/downloads.html)
-* [Documentation](https://netty.io/wiki/)
-* [@netty_project](https://twitter.com/netty_project)
+2、Netty架构
 
-## How to build
+Netty is *an asynchronous event-driven network application framework*
+for rapid development of maintainable high performance protocol servers & clients.
 
-For the detailed information about building and developing Netty, please visit [the developer guide](https://netty.io/wiki/developer-guide.html).  This page only gives very basic information.
+Netty 是一个异步事件驱动的网络应用框架 用于快速开发可维护的高性能协议服务器和客户端
 
-You require the following to build Netty:
+架构图：
 
-* Latest stable [Oracle JDK 7](http://www.oracle.com/technetwork/java/)
-* Latest stable [Apache Maven](http://maven.apache.org/)
-* If you are on Linux, you need [additional development packages](https://netty.io/wiki/native-transports.html) installed on your system, because you'll build the native transport.
+![](.\images\netty-arch.png)
 
-Note that this is build-time requirement.  JDK 5 (for 3.x) or 6 (for 4.0+) is enough to run your Netty-based application.
+Netty is a NIO client server framework which enables quick and easy development of network applications such as protocol servers and clients. It greatly simplifies and streamlines network programming such as TCP and UDP socket server.
 
-## Branches to look
+Netty 是一个 NIO 客户端服务器框架，可以快速轻松地开发网络应用程序，例如协议服务器和客户端。它极大地简化和精简了 TCP 和 UDP 套接字服务器等网络编程。
 
-Development of all versions takes place in each branch whose name is identical to `<majorVersion>.<minorVersion>`.  For example, the development of 3.9 and 4.0 resides in [the branch '3.9'](https://github.com/netty/netty/tree/3.9) and [the branch '4.0'](https://github.com/netty/netty/tree/4.0) respectively.
+'Quick and easy' doesn't mean that a resulting application will suffer from a maintainability or a performance issue. Netty has been designed carefully with the experiences earned from the implementation of a lot of protocols such as FTP, SMTP, HTTP, and various binary and text-based legacy protocols. As a result, Netty has succeeded to find a way to achieve ease of development, performance, stability, and flexibility without a compromise.
 
-## Usage with JDK 9
+“快速简便”并不意味着生成的应用程序会受到可维护性或性能问题的影响。Netty 是根据从许多协议（例如 FTP、SMTP、HTTP 以及各种基于二进制和文本的遗留协议）的实现中获得的经验而精心设计的。因此，Netty 成功地找到了一种方法，实现了易于开发的、可靠性、稳定性和灵活性，而不是一种折中方案。
 
-Netty can be used in modular JDK9 applications as a collection of automatic modules. The module names follow the
-reverse-DNS style, and are derived from subproject names rather than root packages due to historical reasons. They
-are listed below:
+特性：
 
- * `io.netty.all`
- * `io.netty.buffer`
- * `io.netty.codec`
- * `io.netty.codec.dns`
- * `io.netty.codec.haproxy`
- * `io.netty.codec.http`
- * `io.netty.codec.http2`
- * `io.netty.codec.memcache`
- * `io.netty.codec.mqtt`
- * `io.netty.codec.redis`
- * `io.netty.codec.smtp`
- * `io.netty.codec.socks`
- * `io.netty.codec.stomp`
- * `io.netty.codec.xml`
- * `io.netty.common`
- * `io.netty.handler`
- * `io.netty.handler.proxy`
- * `io.netty.resolver`
- * `io.netty.resolver.dns`
- * `io.netty.transport`
- * `io.netty.transport.epoll` (`native` omitted - reserved keyword in Java)
- * `io.netty.transport.kqueue` (`native` omitted - reserved keyword in Java)
- * `io.netty.transport.unix.common` (`native` omitted - reserved keyword in Java)
- * `io.netty.transport.rxtx`
- * `io.netty.transport.sctp`
- * `io.netty.transport.udt`
+由架构图可以看出，Netty主要分为3部分：
 
+2.1、transport service
 
+传输服务：
 
-Automatic modules do not provide any means to declare dependencies, so you need to list each used module separately
-in your `module-info` file.
+- Socket和Datagram（数据报）协议
+- HTTP Tunnel（HTTP 隧道）
+- In-VM Pipe（虚拟机内通道）
+
+Socket和Datagram协议是大家平常使用最多的TCP和UDP协议，
+
+HTTP Tunnel：就和在TCP/IP协议上构建PPTP隧道建立安全的VPN链接类似，HTTP隧道技术是在HTTP协议上构建一个隧道，使得原本只能用于HTTP通讯的HTTP端口能够承载其他各类通讯内容。
+
+虚拟机内通道：JVM的管道，处理进程间通信，进程间常用通讯方式划分为 管道，共享内存，Socket
+
+2.2、protocols support
+
+Netty协议支持：
+
+- HTTP&WebSocket
+- SSL&StartTLS：加密协议
+- Google Protobuf：google的序列化协议
+- zlib/gzip Compression：zlib和gzip压缩
+- Large File Transfer：超大文件传输
+- RTSP：位于应用层的多媒体实时流传输协议
+- Legacy Text Binary Protocols with Unit Testability：传统文本。具有单元测试性的二进制协议
+
+2.3、core
+
+Netty核心模块：
+
+- Extensible Event Model：扩展事件模型
+- Universal Communication API：通用的通信API
+- Zero-Copy-Capable Rich Byte Buffer：支持零拷贝的富字节缓冲区
+
+2、Netty 事件循环器模型推导
+
+3、Netty 内存管理
+
+4、

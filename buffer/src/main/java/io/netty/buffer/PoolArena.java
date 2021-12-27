@@ -37,7 +37,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
         Small,
         Normal
     }
-
+    // tiny pool的size数是 32个。所以每个大小就是 512/32 = 16
     static final int numTinySubpagePools = 512 >>> 4;
 
     final PooledByteBufAllocator parent;
@@ -50,8 +50,8 @@ abstract class PoolArena<T> implements PoolArenaMetric {
     final int numSmallSubpagePools;
     final int directMemoryCacheAlignment;
     final int directMemoryCacheAlignmentMask;
-    private final PoolSubpage<T>[] tinySubpagePools;
-    private final PoolSubpage<T>[] smallSubpagePools;
+    private final PoolSubpage<T>[] tinySubpagePools;        // 分配大小范围[16byte,512byte)
+    private final PoolSubpage<T>[] smallSubpagePools;       // 分配大小范围[512byte,8KB)
 
     private final PoolChunkList<T> q050;
     private final PoolChunkList<T> q025;
@@ -149,7 +149,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
     }
 
     static int tinyIdx(int normCapacity) {
-        return normCapacity >>> 4;
+        return normCapacity >>> 4;          // tiny中每16byte就是一个区，所以求index 只需要右移动4
     }
 
     static int smallIdx(int normCapacity) {
@@ -164,22 +164,24 @@ abstract class PoolArena<T> implements PoolArenaMetric {
 
     // capacity < pageSize
     boolean isTinyOrSmall(int normCapacity) {
-        return (normCapacity & subpageOverflowMask) == 0;
+        // subpageOverflowMask是-8192 = -2^13 => 1111_1111 1111_1111 1110_0000 0000_0000
+        return (normCapacity & subpageOverflowMask) == 0;   // 只有 normCapacity小于8KB(2^13)情况下才为0
     }
 
     // normCapacity < 512
     static boolean isTiny(int normCapacity) {
-        return (normCapacity & 0xFFFFFE00) == 0;
+        // normCapacity & 1111_1111 1111_1111 1111_1110 0000_0000 (4 * 8 = 32) (&:只有两个都为1的情况下才是1)
+        return (normCapacity & 0xFFFFFE00) == 0;    // 只有小于 (512)2^10情况下才为0
     }
 
     private void allocate(PoolThreadCache cache, PooledByteBuf<T> buf, final int reqCapacity) {
         final int normCapacity = normalizeCapacity(reqCapacity);
-        if (isTinyOrSmall(normCapacity)) { // capacity < pageSize
+        if (isTinyOrSmall(normCapacity)) { // capacity < pageSize   capacity小于8KB情况
             int tableIdx;
             PoolSubpage<T>[] table;
             boolean tiny = isTiny(normCapacity);
-            if (tiny) { // < 512
-                if (cache.allocateTiny(this, buf, reqCapacity, normCapacity)) {
+            if (tiny) { // < 512    小于512byte
+                if (cache.allocateTiny(this, buf, reqCapacity, normCapacity)) { // 尝试从cache中分配
                     // was able to allocate out of the cache so move on
                     return;
                 }
@@ -193,7 +195,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
                 tableIdx = smallIdx(normCapacity);
                 table = smallSubpagePools;
             }
-
+            // PoolSubpage 子页对象
             final PoolSubpage<T> head = table[tableIdx];
 
             /**
@@ -218,7 +220,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
             incTinySmallAllocation(tiny);
             return;
         }
-        if (normCapacity <= chunkSize) {
+        if (normCapacity <= chunkSize) {    // capacity 小于等于16M情况，分配normal
             if (cache.allocateNormal(this, buf, reqCapacity, normCapacity)) {
                 // was able to allocate out of the cache so move on
                 return;
@@ -227,7 +229,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
                 allocateNormal(buf, reqCapacity, normCapacity);
                 ++allocationsNormal;
             }
-        } else {
+        } else {                            // capacity 大于16M，分配大页
             // Huge allocations are never served via the cache so just call allocateHuge
             allocateHuge(buf, reqCapacity);
         }
@@ -241,8 +243,9 @@ abstract class PoolArena<T> implements PoolArenaMetric {
             return;
         }
 
-        // Add a new chunk.
+        // Add a new chunk. 生成poolChunk，并初始化属性
         PoolChunk<T> c = newChunk(pageSize, maxOrder, pageShifts, chunkSize);
+        // 有了chunk，开始分配
         boolean success = c.allocate(buf, reqCapacity, normCapacity);
         assert success;
         qInit.add(c);
@@ -314,15 +317,16 @@ abstract class PoolArena<T> implements PoolArenaMetric {
             destroyChunk(chunk);
         }
     }
-
+    // 获取size再SubpagePools的哪个位置
     PoolSubpage<T> findSubpagePoolHead(int elemSize) {
         int tableIdx;
         PoolSubpage<T>[] table;
+
         if (isTiny(elemSize)) { // < 512
-            tableIdx = elemSize >>> 4;
+            tableIdx = elemSize >>> 4;   // tinySubpage下定位index
             table = tinySubpagePools;
         } else {
-            tableIdx = 0;
+            tableIdx = 0;                // smallSubpage下定位index
             elemSize >>>= 10;
             while (elemSize != 0) {
                 elemSize >>>= 1;
@@ -662,7 +666,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
         }
 
         private static byte[] newByteArray(int size) {
-            return PlatformDependent.allocateUninitializedArray(size);
+            return PlatformDependent.allocateUninitializedArray(size);  // 根据size分配出字节数组
         }
 
         @Override

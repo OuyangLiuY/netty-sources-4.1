@@ -145,25 +145,36 @@ final class PoolChunk<T> implements PoolChunkMetric {
         unpooled = false;
         this.arena = arena;
         this.memory = memory;
+        // 一页大小8KB
         this.pageSize = pageSize;
         this.pageShifts = pageShifts;
+        // 最大order 11，想象以16M为root节点的树形结构，树最大深度11，叶子节点大小8KB
         this.maxOrder = maxOrder;
         this.chunkSize = chunkSize;
         this.offset = offset;
+        // 改变当前poolChunk的最大order+1，标记为当前poolChunk已被使用
         unusable = (byte) (maxOrder + 1);
+        // log2()
         log2ChunkSize = log2(chunkSize);
         subpageOverflowMask = ~(pageSize - 1);
+        // 最大空闲byte为16M
         freeBytes = chunkSize;
 
         assert maxOrder < 30 : "maxOrder should be < 30, but is: " + maxOrder;
+        // 最大可以分配的子叶数量 2^11=2048 = 16M/8KB(2^4*1024*1024/2^3*1024=2*1024)
         maxSubpageAllocs = 1 << maxOrder;
 
         // Generate the memory map.
+        // 生成内存映射，length=4096
         memoryMap = new byte[maxSubpageAllocs << 1];
+        // 生成深度map，length=4096
         depthMap = new byte[memoryMap.length];
         int memoryMapIndex = 1;
+        // 初始化数组，模拟生成树形结构
+        // 从0高度开始进行遍历每层并初始化当前的层高
         for (int d = 0; d <= maxOrder; ++ d) { // move down the tree one level at a time
             int depth = 1 << d;
+            // 数组结构：[0,1_1,1_2,2_1,2_2,2_3,2_4...]
             for (int p = 0; p < depth; ++ p) {
                 // in each level traverse left to right and set value to the depth of subtree
                 memoryMap[memoryMapIndex] = (byte) d;
@@ -224,10 +235,12 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
     boolean allocate(PooledByteBuf<T> buf, int reqCapacity, int normCapacity) {
         final long handle;
+        //
         if ((normCapacity & subpageOverflowMask) != 0) { // >= pageSize
+            // 大于8KB情况，
             handle =  allocateRun(normCapacity);
         } else {
-            handle = allocateSubpage(normCapacity);
+            handle = allocateSubpage(normCapacity);     // 小于8KB分配情况下，使用slab算法进行分配，拿到handler
         }
 
         if (handle < 0) {
@@ -247,12 +260,14 @@ final class PoolChunk<T> implements PoolChunkMetric {
      * @param id id
      */
     private void updateParentsAlloc(int id) {
+        // 根据孩子节点值，递归跟新父节点值，
         while (id > 1) {
-            int parentId = id >>> 1;
+            int parentId = id >>> 1;        // 父节点每次由移一位，得到是当前位置的孩子节点
+            // val1/val2 也就是parentId的左右孩子节点的值
             byte val1 = value(id);
-            byte val2 = value(id ^ 1);
+            byte val2 = value(id ^ 1);          // id ^ 1 => 很巧妙，id是偶数，异或之后奇数，id是奇数，异或之后偶数，并且只差一个位置
             byte val = val1 < val2 ? val1 : val2;
-            setValue(parentId, val);
+            setValue(parentId, val);    // 将父节点的值，更新成孩子节点中较小的。为了判断父节点是否也不可用
             id = parentId;
         }
     }
@@ -294,9 +309,10 @@ final class PoolChunk<T> implements PoolChunkMetric {
         int id = 1;
         int initial = - (1 << d); // has last d bits = 0 and rest all = 1
         byte val = value(id);
-        if (val > d) { // unusable
+        if (val > d) { // unusable,当前val大于深度值，说明当前位置已经被分配
             return -1;
         }
+        // (id & initial) == 0 说明id的值是小于2048的，可以找到分配的位置
         while (val < d || (id & initial) == 0) { // id & initial == 1 << d for all ids at depth d, for < d it is 0
             id <<= 1;
             val = value(id);
@@ -308,8 +324,8 @@ final class PoolChunk<T> implements PoolChunkMetric {
         byte value = value(id);
         assert value == d && (id & initial) == 1 << d : String.format("val = %d, id & initial = %d, d = %d",
                 value, id & initial, d);
-        setValue(id, unusable); // mark as unusable
-        updateParentsAlloc(id);
+        setValue(id, unusable); // mark as unusable ，标记当前节点为maxOrder+1=12，为不可用节点
+        updateParentsAlloc(id);     // 递归跟新夫节点值
         return id;
     }
 
@@ -320,7 +336,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
      * @return index in memoryMap
      */
     private long allocateRun(int normCapacity) {
-        int d = maxOrder - (log2(normCapacity) - pageShifts);
+        int d = maxOrder - (log2(normCapacity) - pageShifts);   // 根据capacity得到当前需要在那一层下
         int id = allocateNode(d);
         if (id < 0) {
             return id;
@@ -342,7 +358,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
         PoolSubpage<T> head = arena.findSubpagePoolHead(normCapacity);
         int d = maxOrder; // subpages are only be allocated from pages i.e., leaves
         synchronized (head) {
-            int id = allocateNode(d);
+            int id = allocateNode(d);       // 拿到index,第一次 capacity=1:id = 2048
             if (id < 0) {
                 return id;
             }
@@ -350,9 +366,10 @@ final class PoolChunk<T> implements PoolChunkMetric {
             final PoolSubpage<T>[] subpages = this.subpages;
             final int pageSize = this.pageSize;
 
-            freeBytes -= pageSize;
-
-            int subpageIdx = subpageIdx(id);
+            freeBytes -= pageSize;      // freeBytes已经至少用到了一页 8KB
+            //TODO:mark,如何根据树节点id(memoryMap),计算出subpage中idx：
+            // 因为memoryMap(有4096个节点，后2048个节点是叶子节点)的子节点，从2048开始，表示subpage中第一个idx，依次内推
+            int subpageIdx = subpageIdx(id);    // 拿到所在子页里面的idx
             PoolSubpage<T> subpage = subpages[subpageIdx];
             if (subpage == null) {
                 subpage = new PoolSubpage<T>(head, this, id, runOffset(id), pageSize, normCapacity);
@@ -446,7 +463,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
     private static int log2(int val) {
         // compute the (0-based, with lsb = 0) position of highest set bit i.e, log2
-        return INTEGER_SIZE_MINUS_ONE - Integer.numberOfLeadingZeros(val);
+        return INTEGER_SIZE_MINUS_ONE - Integer.numberOfLeadingZeros(val);  // 得到log2(N)
     }
 
     private int runLength(int id) {
@@ -461,6 +478,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
     }
 
     private int subpageIdx(int memoryMapIdx) {
+        // 移除高位bit，拿到所在subPage中的offset  (memoryMapIdx ^ 2*2^10)，
         return memoryMapIdx ^ maxSubpageAllocs; // remove highest set bit, to get offset
     }
 
