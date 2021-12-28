@@ -154,7 +154,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
         this.offset = offset;
         // 改变当前poolChunk的最大order+1，标记为当前poolChunk已被使用
         unusable = (byte) (maxOrder + 1);
-        // log2()
+        // log2(),chunkSize默认16M算出的值，log2ChunkSize=24
         log2ChunkSize = log2(chunkSize);
         subpageOverflowMask = ~(pageSize - 1);
         // 最大空闲byte为16M
@@ -316,9 +316,9 @@ final class PoolChunk<T> implements PoolChunkMetric {
         while (val < d || (id & initial) == 0) { // id & initial == 1 << d for all ids at depth d, for < d it is 0
             id <<= 1;
             val = value(id);
-            if (val > d) {
-                id ^= 1;
-                val = value(id);
+            if (val > d) {          // 左孩子值大于d，
+                id ^= 1;            // 拿到右孩子id
+                val = value(id);    // 拿到右孩子的值
             }
         }
         byte value = value(id);
@@ -368,7 +368,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
             freeBytes -= pageSize;      // freeBytes已经至少用到了一页 8KB
             //TODO:mark,如何根据树节点id(memoryMap),计算出subpage中idx：
-            // 因为memoryMap(有4096个节点，后2048个节点是叶子节点)的子节点，从2048开始，表示subpage中第一个idx，依次内推
+            // 因为memoryMap(有4096个节点，后2048个节点是叶子节点)的子节点，从2048开始，表示subpage中第一个idx，依次类推
             int subpageIdx = subpageIdx(id);    // 拿到所在子页里面的idx
             PoolSubpage<T> subpage = subpages[subpageIdx];
             if (subpage == null) {
@@ -417,9 +417,9 @@ final class PoolChunk<T> implements PoolChunkMetric {
     }
 
     void initBuf(PooledByteBuf<T> buf, ByteBuffer nioBuffer, long handle, int reqCapacity) {
-        int memoryMapIdx = memoryMapIdx(handle);
-        int bitmapIdx = bitmapIdx(handle);
-        if (bitmapIdx == 0) {
+        int memoryMapIdx = memoryMapIdx(handle);    // handle转成int就是低32位，表示的是  => 最大值4096
+        int bitmapIdx = bitmapIdx(handle);          // handle向右移动32位，高32位变成低32位，就是 bitmapIdx => 最大值512
+        if (bitmapIdx == 0) {                       // 为0，说明需要分配的capacity大于8KB情况
             byte val = value(memoryMapIdx);
             assert val == unusable : String.valueOf(val);
             buf.init(this, nioBuffer, handle, runOffset(memoryMapIdx) + offset,
@@ -468,12 +468,13 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
     private int runLength(int id) {
         // represents the size in #bytes supported by node 'id' in the tree
-        return 1 << log2ChunkSize - depth(id);
+        return 1 << log2ChunkSize - depth(id);      // 计算node节点代表的bytes大小
     }
 
+    // 根据memory数组下标id计算出下一个分配位置的offset偏移
     private int runOffset(int id) {
         // represents the 0-based offset in #bytes from start of the byte-array chunk
-        int shift = id ^ 1 << depth(id);
+        int shift = id ^ (1 << depth(id));        // 获取id所在数组中的偏移量，比如2049代表数组下标1位置，shift=1
         return shift * runLength(id);
     }
 

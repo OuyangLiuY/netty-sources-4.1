@@ -50,7 +50,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
     final int numSmallSubpagePools;
     final int directMemoryCacheAlignment;
     final int directMemoryCacheAlignmentMask;
-    private final PoolSubpage<T>[] tinySubpagePools;        // 分配大小范围[16byte,512byte)
+    private final PoolSubpage<T>[] tinySubpagePools;        // 分配大小范围[16byte,512byte)最小块是每个16byte
     private final PoolSubpage<T>[] smallSubpagePools;       // 分配大小范围[512byte,8KB)
 
     private final PoolChunkList<T> q050;
@@ -373,7 +373,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
         if ((reqCapacity & 15) == 0) {
             return reqCapacity;
         }
-
+        // 计算出需要16倍数的容量，因为tiny中最小容量就是16byte
         return (reqCapacity & ~15) + 16;
     }
 

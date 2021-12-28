@@ -28,7 +28,7 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
     PoolSubpage<T> next;
 
     boolean doNotDestroy;
-    int elemSize;
+    int elemSize;                       // 需要分配元素大小
     private int maxNumElems;
     private int bitmapLength;
     private int nextAvail;
@@ -52,6 +52,7 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         this.memoryMapIdx = memoryMapIdx;
         this.runOffset = runOffset;
         this.pageSize = pageSize;
+        // 用bitmap，long类型数组，512bit 来表示哪个位置已经被使用了。
         bitmap = new long[pageSize >>> 10]; // pageSize / 16 / 64
         init(head, elemSize);
     }
@@ -59,18 +60,20 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
     void init(PoolSubpage<T> head, int elemSize) {
         doNotDestroy = true;
         this.elemSize = elemSize;
-        if (elemSize != 0) {
+        if (elemSize != 0) {    // pageSize=8KB/16=512，也就是一共有512个小块，每一块16byte
             maxNumElems = numAvail = pageSize / elemSize;
             nextAvail = 0;
             bitmapLength = maxNumElems >>> 6;
-            if ((maxNumElems & 63) != 0) {
+            // 当 maxNumElems 小于64 的时候，只需要也给长度的long就可以
+            if ((maxNumElems & 63) != 0) {  // long 64bit，如果maxNum超过512，那么bitmap长度加1，一般情况足够
                 bitmapLength ++;
             }
-
+            // 8*64=512，正好可以完全标记512个位置
             for (int i = 0; i < bitmapLength; i ++) {
                 bitmap[i] = 0;
             }
         }
+        // 链化
         addToPool(head);
     }
 
@@ -87,15 +90,15 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         }
 
         final int bitmapIdx = getNextAvail();
-        int q = bitmapIdx >>> 6;
-        int r = bitmapIdx & 63;
+        int q = bitmapIdx >>> 6;                // bitmapIdx/64，计算所在的位置
+        int r = bitmapIdx & 63;                 // bitmapIdx & 63 计算出需要移动的位数
         assert (bitmap[q] >>> r & 1) == 0;
         bitmap[q] |= 1L << r;
 
         if (-- numAvail == 0) {
             removeFromPool();
         }
-
+        // 将bitmapIdx 放入到long的高32位，memoryMapIdx放入到long的低32中
         return toHandle(bitmapIdx);
     }
 
@@ -156,9 +159,9 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
     }
 
     private int getNextAvail() {
-        int nextAvail = this.nextAvail;
+        int nextAvail = this.nextAvail;     // nextAvail 初始化的时候是0
         if (nextAvail >= 0) {
-            this.nextAvail = -1;
+            this.nextAvail = -1;            // nextAvail=-1，表示bitmap中有数据了
             return nextAvail;
         }
         return findNextAvail();
@@ -169,32 +172,40 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         final int bitmapLength = this.bitmapLength;
         for (int i = 0; i < bitmapLength; i ++) {
             long bits = bitmap[i];
-            if (~bits != 0) {
+            if (~bits != 0) {   // 取反不为0，说明bits的有数，并且所表示下一个位置的数一定在当前i位置上
                 return findNextAvail0(i, bits);
             }
         }
         return -1;
     }
 
-    private int findNextAvail0(int i, long bits) {
-        final int maxNumElems = this.maxNumElems;
-        final int baseVal = i << 6;
+    /**
+     *  根据idx，bits值，获取所表示的下一个位置
+     * @param i     当前bitmap的数组idx
+     * @param bits  当前idx位置的数值
+     * @return      返回所表示下一个位置，(一共512个)
+     */
+    private int findNextAvail0(int i, long bits) {  // 1，0000 0000 0000 0000 0000 0000 0000 0000 1111
+        final int maxNumElems = this.maxNumElems;   // 512
+        final int baseVal = i << 6;                 // 左移6，i位置，所能代表到的总数据 i * 64
 
-        for (int j = 0; j < 64; j ++) {
-            if ((bits & 1) == 0) {
-                int val = baseVal | j;
+        for (int j = 0; j < 64; j ++) {             // bits总共有64位，每一位都计算
+            if ((bits & 1) == 0) {                  // 为0，说明当前位置上已经没有了数据，
+                int val = baseVal | j;              // 计算结果，将baseVal|j，因baseVal总是64的倍数，故相当于 baseVal|j=baseVal + j
                 if (val < maxNumElems) {
                     return val;
                 } else {
                     break;
                 }
             }
-            bits >>>= 1;
+            bits >>>= 1;                            // 不为0，说明有数据，右移
         }
         return -1;
     }
 
     private long toHandle(int bitmapIdx) {
+        // bitmapIdx << 32 向左移动32位，所以是高32位来表示
+        // memoryMapIdx 是低32位，所以是低32位来表示
         return 0x4000000000000000L | (long) bitmapIdx << 32 | memoryMapIdx;
     }
 
