@@ -1,5 +1,12 @@
 # Netty
 
+## Mark
+```C
+ // 内存slab高速着色
+ // 43分钟
+ // 内存释放
+ // DefaultHandle
+```
 ## 1、Netty本地导入IDEA编译
 
 ```sh
