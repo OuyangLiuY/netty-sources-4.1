@@ -76,13 +76,14 @@ public final class InternalThreadLocalMap extends UnpaddedInternalThreadLocalMap
 
     private static InternalThreadLocalMap fastGet(FastThreadLocalThread thread) {
         InternalThreadLocalMap threadLocalMap = thread.threadLocalMap();
-        if (threadLocalMap == null) {
-            thread.setThreadLocalMap(threadLocalMap = new InternalThreadLocalMap());
+        if (threadLocalMap == null) {       // 如果当前 threadLocalMap 不存在，那么就new
+            thread.setThreadLocalMap(threadLocalMap = new InternalThreadLocalMap());    // 默认创建出长度32得object[32]对象数组
         }
         return threadLocalMap;
     }
 
     private static InternalThreadLocalMap slowGet() {
+        // 如果不是fastThread，那么就从ThreadLocal中得entry中获取，因为获取entry要做hash算法，故FastThreadLocal快于ThreadLocal
         ThreadLocal<InternalThreadLocalMap> slowThreadLocalMap = UnpaddedInternalThreadLocalMap.slowThreadLocalMap;
         InternalThreadLocalMap ret = slowThreadLocalMap.get();
         if (ret == null) {
@@ -127,8 +128,8 @@ public final class InternalThreadLocalMap extends UnpaddedInternalThreadLocalMap
     }
 
     private static Object[] newIndexedVariableTable() {
-        Object[] array = new Object[32];
-        Arrays.fill(array, UNSET);
+        Object[] array = new Object[32];    // 创建对象数组，用来做fast缓存
+        Arrays.fill(array, UNSET);          // 默认都填充UNSET对象
         return array;
     }
 
@@ -303,18 +304,20 @@ public final class InternalThreadLocalMap extends UnpaddedInternalThreadLocalMap
             return true;
         }
     }
-
+    // 扩容函数
     private void expandIndexedVariableTableAndSet(int index, Object value) {
         Object[] oldArray = indexedVariables;
         final int oldCapacity = oldArray.length;
         int newCapacity = index;
+        // 获取当前数，最近得2得倍数得值，
+        // 将index二进制位上所有得位转成1，然后在+1
         newCapacity |= newCapacity >>>  1;
         newCapacity |= newCapacity >>>  2;
         newCapacity |= newCapacity >>>  4;
         newCapacity |= newCapacity >>>  8;
         newCapacity |= newCapacity >>> 16;
         newCapacity ++;
-
+        // 调用copy函数，将复制到新得array位置
         Object[] newArray = Arrays.copyOf(oldArray, newCapacity);
         Arrays.fill(newArray, oldCapacity, newArray.length, UNSET);
         newArray[index] = value;

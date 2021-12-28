@@ -51,20 +51,20 @@ public class FastThreadLocal<V> {
      * manage.
      */
     public static void removeAll() {
-        InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.getIfSet();
+        InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.getIfSet();  // 获取线程LocalMap
         if (threadLocalMap == null) {
             return;
         }
 
         try {
-            Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);
+            Object v = threadLocalMap.indexedVariable(variablesToRemoveIndex);      // 获取线程index(0)下缓存得object
             if (v != null && v != InternalThreadLocalMap.UNSET) {
                 @SuppressWarnings("unchecked")
-                Set<FastThreadLocal<?>> variablesToRemove = (Set<FastThreadLocal<?>>) v;
+                Set<FastThreadLocal<?>> variablesToRemove = (Set<FastThreadLocal<?>>) v;    // 0位置下缓存得是所有得Set<FastThreadLocal<?>集合
                 FastThreadLocal<?>[] variablesToRemoveArray =
                         variablesToRemove.toArray(new FastThreadLocal[0]);
                 for (FastThreadLocal<?> tlv: variablesToRemoveArray) {
-                    tlv.remove(threadLocalMap);
+                    tlv.remove(threadLocalMap);                                     // 调用移除函数，回调子类得onRemove方法，释放缓存
                 }
             }
         } finally {
