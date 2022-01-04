@@ -254,17 +254,19 @@ public class ResourceLeakDetector<T> {
     @SuppressWarnings("unchecked")
     private DefaultResourceLeak track0(T obj) {
         Level level = ResourceLeakDetector.level;
-        if (level == Level.DISABLED) {
+        if (level == Level.DISABLED) {  // 直接返回
             return null;
         }
 
-        if (level.ordinal() < Level.PARANOID.ordinal()) {
-            if ((PlatformDependent.threadLocalRandom().nextInt(samplingInterval)) == 0) {
+        if (level.ordinal() < Level.PARANOID.ordinal()) {       // level顺序小于PARANOID
+            // 随机如果nextInt == 0 那么就随机得进入报告内存泄漏，信息
+            if ((PlatformDependent.threadLocalRandom().nextInt(samplingInterval)) == 0) {   // samplingInterval默认 128
                 reportLeak();
-                return new DefaultResourceLeak(obj, refQueue, allLeaks);
+                return new DefaultResourceLeak(obj, refQueue, allLeaks);        // 创建对象的弱引用，等到obj=null的时候
             }
             return null;
         }
+        // level 等于 PARANOID 情况。不管任何情况都报告内存泄漏信息
         reportLeak();
         return new DefaultResourceLeak(obj, refQueue, allLeaks);
     }
@@ -281,29 +283,29 @@ public class ResourceLeakDetector<T> {
     }
 
     private void reportLeak() {
-        if (!logger.isErrorEnabled()) {
+        if (!logger.isErrorEnabled()) { // 没有开启日志情况，那么直接返回，并清除当前refQueue中泄漏的类
             clearRefQueue();
             return;
         }
 
         // Detect and report previous leaks.
-        for (;;) {
+        for (;;) {  // 检测并报告之前得泄漏
             @SuppressWarnings("unchecked")
-            DefaultResourceLeak ref = (DefaultResourceLeak) refQueue.poll();
-            if (ref == null) {
+            DefaultResourceLeak ref = (DefaultResourceLeak) refQueue.poll();    // 从reference队列中获取到跟buf绑定的DefaultResourceLeak对象
+            if (ref == null) {  // 一般gc之后，ref不为空，因为gc之后，系统会将不用的对象放入到队列中
                 break;
             }
 
-            if (!ref.dispose()) {
+            if (!ref.dispose()) {   // 移除失败，那么continue，有可能allLeaks集合中已经不存在
                 continue;
             }
-
+            // allLeaks移除成功，获取记录字符数据，
             String records = ref.toString();
-            if (reportedLeaks.putIfAbsent(records, Boolean.TRUE) == null) {
+            if (reportedLeaks.putIfAbsent(records, Boolean.TRUE) == null) { // 如果records第一次添加，那么报导
                 if (records.isEmpty()) {
                     reportUntracedLeak(resourceType);
                 } else {
-                    reportTracedLeak(resourceType, records);
+                    reportTracedLeak(resourceType, records);    // 打印记录
                 }
             }
         }
@@ -373,7 +375,7 @@ public class ResourceLeakDetector<T> {
             // Store the hash of the tracked object to later assert it in the close(...) method.
             // It's important that we not store a reference to the referent as this would disallow it from
             // be collected via the WeakReference.
-            trackedHash = System.identityHashCode(referent);
+            trackedHash = System.identityHashCode(referent);    // 不用对象引用，因为使用引用的话，弱引用对象将不会被回收
             allLeaks.add(this);
             // Create a new Record so we always have the creation stacktrace included.
             headUpdater.set(this, new Record(Record.BOTTOM));
@@ -446,16 +448,16 @@ public class ResourceLeakDetector<T> {
         }
 
         boolean dispose() {
-            clear();
-            return allLeaks.remove(this);
+            clear();    // 当前缓存的对象(例如:buf)置空
+            return allLeaks.remove(this);   // 尝试将this对象从allLeaks中移除
         }
 
         @Override
         public boolean close() {
-            if (allLeaks.remove(this)) {
+            if (allLeaks.remove(this)) {    // 从allLeaks中移除
                 // Call clear so the reference is not even enqueued.
-                clear();
-                headUpdater.set(this, null);
+                clear();                        // 将reference置空，也就是buf对象，让gc回收buf对象
+                headUpdater.set(this, null);    // 更新record为null
                 return true;
             }
             return false;
@@ -464,7 +466,7 @@ public class ResourceLeakDetector<T> {
         @Override
         public boolean close(T trackedObject) {
             // Ensure that the object that was tracked is the same as the one that was passed to close(...).
-            assert trackedHash == System.identityHashCode(trackedObject);
+            assert trackedHash == System.identityHashCode(trackedObject); // 确保被追踪的对象是同一个对象
 
             try {
                 return close();
@@ -622,7 +624,7 @@ public class ResourceLeakDetector<T> {
             }
 
             // Append the stack trace.
-            StackTraceElement[] array = getStackTrace();
+            StackTraceElement[] array = getStackTrace();    // 获取到堆栈信息
             // Skip the first three elements.
             out: for (int i = 3; i < array.length; i++) {
                 StackTraceElement element = array[i];

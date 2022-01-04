@@ -943,8 +943,8 @@ final class AdvancedLeakAwareByteBuf extends SimpleLeakAwareByteBuf {
 
     @Override
     public boolean release(int decrement) {
-        leak.record();
-        return super.release(decrement);
+        leak.record();          // advanced情况下 报告一下内存泄漏情况，
+        return super.release(decrement);    // 调用父类的release函数，释放buf的内存
     }
 
     @Override

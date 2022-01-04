@@ -36,6 +36,7 @@ import static java.lang.Math.min;
  *
  * @param <T> the type of the pooled object
  */
+// 轻量级的对象池，基于thread-local的stack
 public abstract class Recycler<T> {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(Recycler.class);
@@ -195,7 +196,7 @@ public abstract class Recycler<T> {
     protected abstract T newObject(Handle<T> handle);
 
     public interface Handle<T> {
-        void recycle(T object);
+        void recycle(T object);     // object 就是要回收的那个对象
     }
 
     static final class DefaultHandle<T> implements Handle<T> {
@@ -221,7 +222,7 @@ public abstract class Recycler<T> {
             if (lastRecycledId != recycleId || stack == null) {
                 throw new IllegalStateException("recycled already");
             }
-
+            // 放入到stack中
             stack.push(this);
         }
     }
@@ -367,7 +368,9 @@ public abstract class Recycler<T> {
             handle.stack = null;
             // we lazy set to ensure that setting stack to null appears before we unnull it in the owning thread;
             // this also means we guarantee visibility of an element in the queue if we see the index updated
-            tail.lazySet(writeIndex + 1);
+            // 这也意味着如果我们看到索引更新，我们保证队列中元素的可见性，
+            tail.lazySet(writeIndex + 1);  // 编译器优化成  volatile value++
+            // tail.incrementAndGet(); 使用cas 可用性能低,
         }
 
         boolean hasFinalData() {
@@ -376,7 +379,7 @@ public abstract class Recycler<T> {
 
         // transfer as many items as we can from this queue to the stack, returning true if any were transferred
         @SuppressWarnings("rawtypes")
-        boolean transfer(Stack<?> dst) {
+        boolean transfer(Stack<?> dst) {    // 从队列中数据转移到stack中
             Link head = this.head.link;
             if (head == null) {
                 return false;
@@ -386,7 +389,7 @@ public abstract class Recycler<T> {
                 if (head.next == null) {            // 没有下一个元素，直接返回
                     return false;
                 }
-                this.head.link = head = head.next;
+                this.head.link = head = head.next;  // 去到link的next位置
                 this.head.reclaimSpace(LINK_CAPACITY);
             }
 
@@ -407,7 +410,7 @@ public abstract class Recycler<T> {
 
             if (srcStart != srcEnd) {
                 final DefaultHandle[] srcElems = head.elements;
-                final DefaultHandle[] dstElems = dst.elements;
+                final DefaultHandle[] dstElems = dst.elements;  // stack存储的元素
                 int newDstSize = dstSize;
                 for (int i = srcStart; i < srcEnd; i++) {
                     DefaultHandle element = srcElems[i];
@@ -588,13 +591,14 @@ public abstract class Recycler<T> {
 
         void push(DefaultHandle<?> item) {
             Thread currentThread = Thread.currentThread();
-            if (threadRef.get() == currentThread) {
+            if (threadRef.get() == currentThread) { // 同一个线程，那么直接将其放入到stack的elements中
                 // The current Thread is the thread that belongs to the Stack, we can try to push the object now.
                 pushNow(item);
             } else {
                 // The current Thread is not the one that belongs to the Stack
                 // (or the Thread that belonged to the Stack was collected already), we need to signal that the push
                 // happens later.
+                // 当前线程不属于stack或者属于stack的线程已经被回收了，那么我们就需要push之后发生
                 pushLater(item, currentThread);
             }
         }
@@ -631,7 +635,7 @@ public abstract class Recycler<T> {
                     return;
                 }
                 // Check if we already reached the maximum number of delayed queues and if we can allocate at all.
-                if ((queue = WeakOrderQueue.allocate(this, thread)) == null) {
+                if ((queue = WeakOrderQueue.allocate(this, thread)) == null) {  // 在没有超过maximum的情况下创建队列
                     // drop object
                     return;
                 }
@@ -640,17 +644,17 @@ public abstract class Recycler<T> {
                 // drop object
                 return;
             }
-
+            // 将其添加到队列，以便于后续调用transfer放入到stack中
             queue.add(item);
         }
 
         boolean dropHandle(DefaultHandle<?> handle) {
-            if (!handle.hasBeenRecycled) {
-                if ((++handleRecycleCount & ratioMask) != 0) {
+            if (!handle.hasBeenRecycled) {  // 是否已经被回收过了？没有才尝试
+                if ((++handleRecycleCount & ratioMask) != 0) {  // 0 & 01000
                     // Drop the object.
                     return true;
                 }
-                handle.hasBeenRecycled = true;
+                handle.hasBeenRecycled = true;  // 标记为已经被回收，
             }
             return false;
         }

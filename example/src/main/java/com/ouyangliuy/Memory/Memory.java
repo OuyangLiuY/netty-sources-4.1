@@ -3,6 +3,9 @@ package com.ouyangliuy.Memory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.internal.PlatformDependent;
+
+import java.util.Random;
 
 
 public class Memory {
@@ -23,6 +26,19 @@ public class Memory {
         ll.writeZero(ll.capacity());
         ll.release();
 
-        ReferenceCountUtil.release(ll);
+//        ReferenceCountUtil.release(ll);
+
+        int anInt = PlatformDependent.threadLocalRandom().nextInt(128);
+        System.out.println(anInt);
+        Random random = new Random();
+        System.out.println(random.nextInt(100));
+        int a = 10;
+        while (a != 0){
+            a = random.nextInt(100);
+            if(a == 0){
+                System.out.println("00");
+            }
+        }
+
     }
 }

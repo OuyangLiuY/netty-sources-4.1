@@ -21,7 +21,7 @@
 git clone git@github.com:OuyangLiuY/netty-sources-4.1.git -b 4.1.42
 # 2.项目配置JDK1.8
 # 3.进入common目录，执行如下命令
-mvn install -Dmaven.test.skip=true -Dcheckstyle.skip=true
+mvn install -Dmaven.test.skip=true -Dcheckstyle.skip=true   -Denforcer.skip=true
 # 4.刷新maven工程，build即可
 ```
 

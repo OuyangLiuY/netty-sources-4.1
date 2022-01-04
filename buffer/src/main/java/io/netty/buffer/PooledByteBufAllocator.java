@@ -350,7 +350,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
                     new UnpooledHeapByteBuf(this, initialCapacity, maxCapacity);
         }
 
-        return toLeakAwareBuffer(buf);
+        return toLeakAwareBuffer(buf);      // 内存泄露检测
     }
 
     @Override
