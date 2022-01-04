@@ -273,7 +273,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
             activeBytesHuge.add(-size);
             deallocationsHuge.increment();
         } else {
-            SizeClass sizeClass = sizeClass(normCapacity);
+            SizeClass sizeClass = sizeClass(normCapacity);      // 获取到sizeClass类型
             if (cache != null && cache.add(this, chunk, nioBuffer, handle, normCapacity, sizeClass)) {
                 // cached so not free it.
                 return;
@@ -312,7 +312,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
             }
             destroyChunk = !chunk.parent.free(chunk, handle, nioBuffer);
         }
-        if (destroyChunk) {
+        if (destroyChunk) {         // 如果destroyChunk失败，那么尝试使用unsafe销毁当前direct区上分配的chunk内存
             // destroyChunk not need to be called while holding the synchronized lock.
             destroyChunk(chunk);
         }
@@ -349,13 +349,15 @@ abstract class PoolArena<T> implements PoolArenaMetric {
             // Doubled
 
             int normalizedCapacity = reqCapacity;
-            normalizedCapacity --;
+
+            normalizedCapacity --;  // 为了满足已经是2^n次方的情况
+            // 以下方法是将最高位为1的其它低位全部变成 1
             normalizedCapacity |= normalizedCapacity >>>  1;
             normalizedCapacity |= normalizedCapacity >>>  2;
             normalizedCapacity |= normalizedCapacity >>>  4;
             normalizedCapacity |= normalizedCapacity >>>  8;
             normalizedCapacity |= normalizedCapacity >>> 16;
-            normalizedCapacity ++;
+            normalizedCapacity ++;  // 将其 +1 用来进位，变成2^n或者/2^n+1
 
             if (normalizedCapacity < 0) {
                 normalizedCapacity >>>= 1;

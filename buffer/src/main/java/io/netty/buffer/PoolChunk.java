@@ -393,7 +393,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
         int memoryMapIdx = memoryMapIdx(handle);
         int bitmapIdx = bitmapIdx(handle);
 
-        if (bitmapIdx != 0) { // free a subpage
+        if (bitmapIdx != 0) { // free a subpage ，说明是一个8KB下的一个子页
             PoolSubpage<T> subpage = subpages[subpageIdx(memoryMapIdx)];
             assert subpage != null && subpage.doNotDestroy;
 
@@ -406,13 +406,14 @@ final class PoolChunk<T> implements PoolChunkMetric {
                 }
             }
         }
-        freeBytes += runLength(memoryMapIdx);
-        setValue(memoryMapIdx, depth(memoryMapIdx));
-        updateParentsFree(memoryMapIdx);
+
+        freeBytes += runLength(memoryMapIdx);           // 计算可用内存
+        setValue(memoryMapIdx, depth(memoryMapIdx));    // 设置当前memoryMapIdx位置上的深度值
+        updateParentsFree(memoryMapIdx);                //递归设置代表父节点值
 
         if (nioBuffer != null && cachedNioBuffers != null &&
                 cachedNioBuffers.size() < PooledByteBufAllocator.DEFAULT_MAX_CACHED_BYTEBUFFERS_PER_CHUNK) {
-            cachedNioBuffers.offer(nioBuffer);
+            cachedNioBuffers.offer(nioBuffer);          // 缓存buffer
         }
     }
 

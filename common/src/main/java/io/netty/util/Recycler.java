@@ -382,8 +382,8 @@ public abstract class Recycler<T> {
                 return false;
             }
 
-            if (head.readIndex == LINK_CAPACITY) {
-                if (head.next == null) {
+            if (head.readIndex == LINK_CAPACITY) {  // 开始读的位置来到了容量末尾
+                if (head.next == null) {            // 没有下一个元素，直接返回
                     return false;
                 }
                 this.head.link = head = head.next;
@@ -507,7 +507,7 @@ public abstract class Recycler<T> {
         DefaultHandle<T> pop() {
             int size = this.size;
             if (size == 0) {
-                if (!scavenge()) {
+                if (!scavenge()) {   // stack中元素为空，执行清理
                     return null;
                 }
                 size = this.size;

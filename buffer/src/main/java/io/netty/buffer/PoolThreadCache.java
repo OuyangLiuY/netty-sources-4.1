@@ -46,6 +46,7 @@ final class PoolThreadCache {
     final PoolArena<ByteBuffer> directArena;
 
     // Hold the caches for the different size classes, which are tiny, small and normal.
+    // 不同类型的缓冲对象
     private final MemoryRegionCache<byte[]>[] tinySubPageHeapCaches;
     private final MemoryRegionCache<byte[]>[] smallSubPageHeapCaches;
     private final MemoryRegionCache<ByteBuffer>[] tinySubPageDirectCaches;
@@ -210,7 +211,7 @@ final class PoolThreadCache {
     }
 
     private MemoryRegionCache<?> cache(PoolArena<?> area, int normCapacity, SizeClass sizeClass) {
-        switch (sizeClass) {
+        switch (sizeClass) {        // 根据不同的类型添加到不同的缓存中
         case Normal:
             return cacheForNormal(area, normCapacity);
         case Small:
@@ -228,7 +229,7 @@ final class PoolThreadCache {
         try {
             super.finalize();
         } finally {
-            free(true);
+            free(true); // GC 调用free
         }
     }
 
@@ -238,7 +239,8 @@ final class PoolThreadCache {
     void free(boolean finalizer) {
         // As free() may be called either by the finalizer or by FastThreadLocal.onRemoval(...) we need to ensure
         // we only call this one time.
-        if (freed.compareAndSet(false, true)) {
+        // 调用free有两个地方：1，finalizer(GC的时候) 2、FastThreadLocal.onRemoval();
+        if (freed.compareAndSet(false, true)) {     // cas更新，说明只有一个线程能进来
             int numFreed = free(tinySubPageDirectCaches, finalizer) +
                     free(smallSubPageDirectCaches, finalizer) +
                     free(normalDirectCaches, finalizer) +
@@ -368,9 +370,9 @@ final class PoolThreadCache {
     }
 
     private abstract static class MemoryRegionCache<T> {
-        private final int size;
-        private final Queue<Entry<T>> queue;
-        private final SizeClass sizeClass;
+        private final int size;                     // 缓存的数量
+        private final Queue<Entry<T>> queue;        // 缓存对象添加到队列中
+        private final SizeClass sizeClass;          // 类型 tiny，small、normal
         private int allocations;
 
         MemoryRegionCache(int size, SizeClass sizeClass) {
@@ -390,7 +392,8 @@ final class PoolThreadCache {
          */
         @SuppressWarnings("unchecked")
         public final boolean add(PoolChunk<T> chunk, ByteBuffer nioBuffer, long handle) {
-            Entry<T> entry = newEntry(chunk, nioBuffer, handle);
+
+            Entry<T> entry = newEntry(chunk, nioBuffer, handle);    //
             boolean queued = queue.offer(entry);
             if (!queued) {
                 // If it was not possible to cache the chunk, immediately recycle the entry
@@ -426,7 +429,7 @@ final class PoolThreadCache {
         private int free(int max, boolean finalizer) {
             int numFreed = 0;
             for (; numFreed < max; numFreed++) {
-                Entry<T> entry = queue.poll();
+                Entry<T> entry = queue.poll();      // 拿到正真缓存的对象 entry
                 if (entry != null) {
                     freeEntry(entry, finalizer);
                 } else {
@@ -456,26 +459,27 @@ final class PoolThreadCache {
             long handle = entry.handle;
             ByteBuffer nioBuffer = entry.nioBuffer;
 
-            if (!finalizer) {
+            if (!finalizer) {   // threadLocal调用，让GC去回收PoolChunk
                 // recycle now so PoolChunk can be GC'ed. This will only be done if this is not freed because of
                 // a finalizer.
-                entry.recycle();
+                entry.recycle();    // 给 chunk 赋 null，让GC回收
             }
 
             chunk.arena.freeChunk(chunk, handle, sizeClass, nioBuffer, finalizer);
         }
 
         static final class Entry<T> {
-            final Handle<Entry<?>> recyclerHandle;
-            PoolChunk<T> chunk;
-            ByteBuffer nioBuffer;
+            final Handle<Entry<?>> recyclerHandle;          // 对象回收器，netty的内存回收，默认 DefaultHandle
+            PoolChunk<T> chunk;                             // 持有的chunk
+            ByteBuffer nioBuffer;                           // buffer
             long handle = -1;
+            //
 
             Entry(Handle<Entry<?>> recyclerHandle) {
                 this.recyclerHandle = recyclerHandle;
             }
 
-            void recycle() {
+            void recycle() {      // entry中只有recycle方法，用于回调DefaultHandle的回调，用来回收当前entry对象
                 chunk = null;
                 nioBuffer = null;
                 handle = -1;

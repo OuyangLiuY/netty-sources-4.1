@@ -1,4 +1,11 @@
-# Netty
+# Netty 
+
+## 阅读源码技巧：
+
+1. 官网+源码
+2. 梳理流程脉络
+3. 逐个攻破
+4. 切记钻牛角尖
 
 ## 1、Netty本地导入IDEA编译
 
@@ -11,7 +18,7 @@ mvn install -Dmaven.test.skip=true -Dcheckstyle.skip=true
 # 4.刷新maven工程，build即可
 ```
 
-2、Netty架构
+## 2、Netty架构
 
 Netty is *an asynchronous event-driven network application framework*
 for rapid development of maintainable high performance protocol servers & clients.
@@ -34,7 +41,7 @@ Netty 是一个 NIO 客户端服务器框架，可以快速轻松地开发网络
 
 由架构图可以看出，Netty主要分为3部分：
 
-2.1、transport service
+### 2.1、transport service
 
 传输服务：
 
@@ -48,7 +55,7 @@ HTTP Tunnel：就和在TCP/IP协议上构建PPTP隧道建立安全的VPN链接�
 
 虚拟机内通道：JVM的管道，处理进程间通信，进程间常用通讯方式划分为 管道，共享内存，Socket
 
-2.2、protocols support
+### 2.2、protocols support
 
 Netty协议支持：
 
@@ -60,7 +67,7 @@ Netty协议支持：
 - RTSP：位于应用层的多媒体实时流传输协议
 - Legacy Text Binary Protocols with Unit Testability：传统文本。具有单元测试性的二进制协议
 
-2.3、core
+### 2.3、core
 
 Netty核心模块：
 
@@ -68,8 +75,39 @@ Netty核心模块：
 - Universal Communication API：通用的通信API
 - Zero-Copy-Capable Rich Byte Buffer：支持零拷贝的富字节缓冲区
 
-2、Netty 事件循环器模型推导
+## 3、事件循环器模型推导
 
-3、Netty 内存管理
+## 4、内存管理之分配
 
-4、
+### 4.1、内存分配算法
+
+思考：内存分配需要思考的问题？
+
+1. 减少外碎片
+2. 减少内碎片
+
+#### 4.1.1、伙伴算法
+
+注意：尽量减少外碎片，是将例如 16M内存分配成2048个块，没个块8KB，第一和第二个块组成了伙伴，依次内推，而且伙伴可以合并，假如合并成16KB,那么总共有1024个块，也是第一和第二个块组成了伙伴。
+
+#### 4.1.2、slab算法
+
+注意：尽量减少内碎片，为小内存而生，在伙伴算法基础上，将最小的块(8KB)分成N个小份，在满足需要内存的情况下分配尽量小块，但也不是无限分配，netty中最小的块是16byte。
+
+### 4.2、内存分配之 jemalloc
+
+看：jemalloc论文.pdf
+
+### 4.3、Netty 内存分配原理
+
+
+
+## 5、内存管理之释放
+
+
+
+## 6、Netty 协议管理
+
+
+
+## 7、总结

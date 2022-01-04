@@ -251,7 +251,7 @@ public class FastThreadLocal<V> {
 
         Object v = threadLocalMap.removeIndexedVariable(index);
         removeFromVariablesToRemove(threadLocalMap, this);
-
+        // 如果对象v不是UNSET，那么就直接回调onRemoval方法
         if (v != InternalThreadLocalMap.UNSET) {
             try {
                 onRemoval((V) v);

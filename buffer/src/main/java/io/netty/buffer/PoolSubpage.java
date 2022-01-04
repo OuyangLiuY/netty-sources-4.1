@@ -110,14 +110,14 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         if (elemSize == 0) {
             return true;
         }
-        int q = bitmapIdx >>> 6;
-        int r = bitmapIdx & 63;
+        int q = bitmapIdx >>> 6;        // 2^6=64 ,表示有64的倍数
+        int r = bitmapIdx & 63;         // 表示有几位大于64
         assert (bitmap[q] >>> r & 1) != 0;
-        bitmap[q] ^= 1L << r;
+        bitmap[q] ^= 1L << r;           //
 
-        setNextAvail(bitmapIdx);
+        setNextAvail(bitmapIdx);        // 设置下一个可获取到的值为当前的bitmapIdx
 
-        if (numAvail ++ == 0) {
+        if (numAvail ++ == 0) {         // 此时说明Subpage还没有任何一个subpage
             addToPool(head);
             return true;
         }
@@ -126,14 +126,14 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
             return true;
         } else {
             // Subpage not in use (numAvail == maxNumElems)
-            if (prev == next) {
+            if (prev == next) {     // 只有一个subpage的情况下，不做移除操作
                 // Do not remove if this subpage is the only one left in the pool.
                 return true;
             }
 
             // Remove this subpage from the pool if there are other subpages left in the pool.
             doNotDestroy = false;
-            removeFromPool();
+            removeFromPool();   // 从列表移除PoolSubpage
             return false;
         }
     }
