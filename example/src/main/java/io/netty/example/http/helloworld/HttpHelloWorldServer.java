@@ -51,13 +51,13 @@ public final class HttpHelloWorldServer {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             ServerBootstrap b = new ServerBootstrap();
-            b.option(ChannelOption.SO_BACKLOG, 1024);
-            b.group(bossGroup, workerGroup)
+            b.option(ChannelOption.SO_BACKLOG, 1024);   // 设置属性
+            b.group(bossGroup, workerGroup)                    // 绑定work和boss工作组
              .channel(NioServerSocketChannel.class)
-             .handler(new LoggingHandler(LogLevel.INFO))
-             .childHandler(new HttpHelloWorldServerInitializer(sslCtx));
+             .handler(new LoggingHandler(LogLevel.INFO))        // 创建日志handler处理器并绑定到b中
+             .childHandler(new HttpHelloWorldServerInitializer(sslCtx));    // 创建通道处理器，并绑定到child中
 
-            Channel ch = b.bind(PORT).sync().channel();
+            Channel ch = b.bind(PORT).sync().channel();                     // 同步等待绑定成功端口
 
             System.err.println("Open your web browser and navigate to " +
                     (SSL? "https" : "http") + "://127.0.0.1:" + PORT + '/');

@@ -487,7 +487,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             if (stackDepth < MAX_LISTENER_STACK_DEPTH) {
                 threadLocals.setFutureListenerStackDepth(stackDepth + 1);
                 try {
-                    notifyListenersNow();
+                    notifyListenersNow();       // 触发promise通知操作
                 } finally {
                     threadLocals.setFutureListenerStackDepth(stackDepth);
                 }
@@ -535,7 +535,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private void notifyListenersNow() {
         Object listeners;
-        synchronized (this) {
+        synchronized (this) {   // 同步修改当前得状态
             // Only proceed if there are listeners to notify and we are not already notifying listeners.
             if (notifyingListeners || this.listeners == null) {
                 return;

@@ -520,14 +520,14 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 }
             }
 
-            task = pollTask();
-            if (task == null) {
+            task = pollTask();  // 拿到要执行得任务
+            if (task == null) { // 没有，那么直接跳出循环
                 lastExecutionTime = ScheduledFutureTask.nanoTime();
                 break;
             }
         }
 
-        afterRunningAllTasks();
+        afterRunningAllTasks(); // 尝试运行所有得任务
         this.lastExecutionTime = lastExecutionTime;
         return true;
     }
@@ -877,7 +877,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
 
         boolean inEventLoop = inEventLoop();
-        addTask(task);
+        addTask(task);                  // 将任务添加到队列taskQueue
         if (!inEventLoop) {
             startThread();
             if (isShutdown()) {
@@ -1028,7 +1028,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         return false;
     }
 
-    private void doStartThread() {
+    private void doStartThread() {  // 开始线程执行
         assert thread == null;
         executor.execute(new Runnable() {
             @Override
@@ -1041,6 +1041,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 boolean success = false;
                 updateLastExecutionTime();
                 try {
+                    // 调用对应socket实现如NioEventLoop中得run方法
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {

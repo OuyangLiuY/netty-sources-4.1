@@ -464,7 +464,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             AbstractChannel.this.eventLoop = eventLoop;
-
+            // 主线程调用注册
             if (eventLoop.inEventLoop()) {
                 register0(promise);
             } else {
@@ -485,7 +485,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 }
             }
         }
-
+        // 注册
         private void register0(ChannelPromise promise) {
             try {
                 // check if the channel is still open as it could be closed in the mean time when the register
@@ -494,7 +494,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
-                doRegister();
+                doRegister();   // 模板方法，用于
                 neverRegistered = false;
                 registered = true;
 
@@ -548,6 +548,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             boolean wasActive = isActive();
             try {
+                // 实际绑定操作，将端口和channel绑定
                 doBind(localAddress);
             } catch (Throwable t) {
                 safeSetFailure(promise, t);

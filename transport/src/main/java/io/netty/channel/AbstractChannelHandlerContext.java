@@ -474,19 +474,24 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     @Override
     public ChannelFuture bind(final SocketAddress localAddress, final ChannelPromise promise) {
+        // 绑定 端口 和 promise
         if (localAddress == null) {
             throw new NullPointerException("localAddress");
         }
+        // 检测promise的状态
         if (isNotValidPromise(promise, false)) {
             // cancelled
             return promise;
         }
-
+        // 尝试拿到 outbound ctx
         final AbstractChannelHandlerContext next = findContextOutbound(MASK_BIND);
+        // 执行器
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
+            // 使用NioEventLoop中执行器执行绑定操作
             next.invokeBind(localAddress, promise);
         } else {
+            // 主线程执行器执行绑定操作
             safeExecute(executor, new Runnable() {
                 @Override
                 public void run() {
