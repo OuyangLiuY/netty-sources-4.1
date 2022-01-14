@@ -25,6 +25,7 @@ import java.util.List;
  * A decoder that splits the received {@link ByteBuf}s on line endings.
  * <p>
  * Both {@code "\n"} and {@code "\r\n"} are handled.
+ *  特殊，字符，\r\n
  * <p>
  * The byte stream is expected to be in UTF-8 character encoding or ASCII. The current implementation
  * uses direct {@code byte} to {@code char} cast and then compares that {@code char} to a few low range

@@ -142,9 +142,9 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     static void invokeChannelRegistered(final AbstractChannelHandlerContext next) {
-        EventExecutor executor = next.executor();
+        EventExecutor executor = next.executor();   // 拿到执行器
         if (executor.inEventLoop()) {
-            next.invokeChannelRegistered();
+            next.invokeChannelRegistered();         // 调用
         } else {
             executor.execute(new Runnable() {
                 @Override
@@ -156,8 +156,11 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     }
 
     private void invokeChannelRegistered() {
-        if (invokeHandler()) {
+        if (invokeHandler()) {  // 检查是否调用了handlerAdded并探测
             try {
+                // 注册channel事件，
+                // 如调用ChannelInitializer得channelRegistered，并完成initChannel方法得调用，
+                // 将编解码和异常已经自己实现得handler添加到pipeline中，以便于之后接收到事件之后的调用。
                 ((ChannelInboundHandler) handler()).channelRegistered(this);
             } catch (Throwable t) {
                 notifyHandlerException(t);
@@ -201,10 +204,11 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     @Override
     public ChannelHandlerContext fireChannelActive() {
-        invokeChannelActive(findContextInbound(MASK_CHANNEL_ACTIVE));
+        invokeChannelActive(findContextInbound(MASK_CHANNEL_ACTIVE));   // 拿得到下一个ctx并进行调用
         return this;
     }
 
+    // next也就是当前AbstractChannelHandlerContext链表上的下一个元素进行执行
     static void invokeChannelActive(final AbstractChannelHandlerContext next) {
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
@@ -353,6 +357,8 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         return this;
     }
 
+
+    // 拿到当前ctx得执行器，调用invokeChannelRead
     static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
         EventExecutor executor = next.executor();
@@ -371,7 +377,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private void invokeChannelRead(Object msg) {
         if (invokeHandler()) {
             try {
-                ((ChannelInboundHandler) handler()).channelRead(this, msg);
+                ((ChannelInboundHandler) handler()).channelRead(this, msg); // 触发defaultChannelPipeline通道读事件
             } catch (Throwable t) {
                 notifyHandlerException(t);
             }
@@ -917,6 +923,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         return false;
     }
 
+    // 从ctx中获取到Inbound并返回
     private AbstractChannelHandlerContext findContextInbound(int mask) {
         AbstractChannelHandlerContext ctx = this;
         do {
@@ -985,13 +992,15 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     /**
      * Makes best possible effort to detect if {@link ChannelHandler#handlerAdded(ChannelHandlerContext)} was called
      * yet. If not return {@code false} and if called or could not detect return {@code true}.
+     * 检测handlerAdded是否被调用了，如果被调用了或者检测不到，那么返回true，否则就是false
      *
      * If this method returns {@code false} we will not invoke the {@link ChannelHandler} but just forward the event.
+     * 如果该方法返回false，那么我们不会执行ChannelHandler，但只转发事件。
      * This is needed as {@link DefaultChannelPipeline} may already put the {@link ChannelHandler} in the linked-list
      * but not called {@link ChannelHandler#handlerAdded(ChannelHandlerContext)}.
      */
     private boolean invokeHandler() {
-        // Store in local variable to reduce volatile reads.
+        // Store in local variable to reduce volatile reads. 储存局部volatile变量减少volatile得读
         int handlerState = this.handlerState;
         return handlerState == ADD_COMPLETE || (!ordered && handlerState == ADD_PENDING);
     }

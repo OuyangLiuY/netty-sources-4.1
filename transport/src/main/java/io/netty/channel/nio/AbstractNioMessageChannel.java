@@ -89,14 +89,14 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
 
                 int size = readBuf.size();
                 for (int i = 0; i < size; i ++) {
-                    readPending = false;
-                    pipeline.fireChannelRead(readBuf.get(i));
+                    readPending = false;    // 修改待读取状态
+                    pipeline.fireChannelRead(readBuf.get(i));   // 触发通道读取事件
                 }
                 readBuf.clear();
                 allocHandle.readComplete();
-                pipeline.fireChannelReadComplete();
+                pipeline.fireChannelReadComplete(); // 触发通道读取完成事件
 
-                if (exception != null) {
+                if (exception != null) {    // 有错误，那么执行pipeline的错误事件
                     closed = closeOnReadError(exception);
 
                     pipeline.fireExceptionCaught(exception);

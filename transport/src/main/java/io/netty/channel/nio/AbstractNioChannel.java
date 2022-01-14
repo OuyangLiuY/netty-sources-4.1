@@ -331,7 +331,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
             try {
                 boolean wasActive = isActive();
-                doFinishConnect();
+                doFinishConnect();  //
                 fulfillConnectPromise(connectPromise, wasActive);
             } catch (Throwable t) {
                 fulfillConnectPromise(connectPromise, annotateConnectException(t, requestedRemoteAddress));
@@ -377,6 +377,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         boolean selected = false;
         for (;;) {
             try {
+                // 获取selectionKey，并将其感兴趣事件标记位设置为0，等待之中根据不同事件进行处理
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {

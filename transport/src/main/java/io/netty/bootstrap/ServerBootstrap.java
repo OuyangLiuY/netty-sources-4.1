@@ -122,7 +122,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     }
 
     @Override
-    void init(Channel channel) {
+    void init(Channel channel) {    // 初始化一些必须得对象
         setChannelOptions(channel, options0().entrySet().toArray(newOptionArray(0)), logger);
         setAttributes(channel, attrs0().entrySet().toArray(newAttrArray(0)));
         // 拿到channel绑定的pipeline
@@ -134,16 +134,16 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 childOptions.entrySet().toArray(newOptionArray(0));
         final Entry<AttributeKey<?>, Object>[] currentChildAttrs = childAttrs.entrySet().toArray(newAttrArray(0));
 
-        p.addLast(new ChannelInitializer<Channel>() {
+        p.addLast(new ChannelInitializer<Channel>() {   // 创建channel 初始化对象
             @Override
-            public void initChannel(final Channel ch) {
+            public void initChannel(final Channel ch) { // 等待从p中拿出之后执行
                 final ChannelPipeline pipeline = ch.pipeline();
                 ChannelHandler handler = config.handler();
-                if (handler != null) {
+                if (handler != null) {  // 存在handler添加到pipeline尾部
                     pipeline.addLast(handler);
                 }
 
-                ch.eventLoop().execute(new Runnable() {
+                ch.eventLoop().execute(new Runnable() { // ch得run方法
                     @Override
                     public void run() {
                         pipeline.addLast(new ServerBootstrapAcceptor(
@@ -198,15 +198,17 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
 
         @Override
         @SuppressWarnings("unchecked")
+        // 在boss线程中调用该方法，将读取到到的客户端socketChannel注册到worker线程中，
+        // 并将其childHandler处理函数绑定到socketChannel中，用于worker线程中调用handler完成实际读写操作
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
-            final Channel child = (Channel) msg;
-
-            child.pipeline().addLast(childHandler);
+            final Channel child = (Channel) msg;    // read的时候，msg是客户端NioSocketChannel
+            // 给NioSocketChannel中的pipeline添加childHandler，用于自己的线程去执行childHandler:HttpHelloWorldServerInitializer
+            child.pipeline().addLast(childHandler); // 添加读事件的处理器，childHandler
 
             setChannelOptions(child, childOptions, logger);
             setAttributes(child, childAttrs);
 
-            try {
+            try {   // 此时是workerGroup，将child注册到workerGroup上执行，客户端NioSocketChannel异步读取， 并绑定监听器
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {

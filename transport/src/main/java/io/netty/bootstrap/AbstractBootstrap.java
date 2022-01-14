@@ -313,7 +313,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
-        ChannelFuture regFuture = config().group().register(channel);
+        ChannelFuture regFuture = config().group().register(channel);   // 拿到boss group得进行register操作
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
                 channel.close();

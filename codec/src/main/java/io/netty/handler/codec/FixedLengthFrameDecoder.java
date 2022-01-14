@@ -40,6 +40,7 @@ import java.util.List;
  */
 public class FixedLengthFrameDecoder extends ByteToMessageDecoder {
 
+    // 代表每例如每3个长度代表一个数据
     private final int frameLength;
 
     /**

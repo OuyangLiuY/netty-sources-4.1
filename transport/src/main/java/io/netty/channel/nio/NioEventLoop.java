@@ -152,7 +152,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     private static Queue<Runnable> newTaskQueue(
             EventLoopTaskQueueFactory queueFactory) {
-        if (queueFactory == null) {
+        if (queueFactory == null) { // queueFactory不存在，那么创建默认的16容量的队列，存放runnable
             return newTaskQueue0(DEFAULT_MAX_PENDING_TASKS);
         }
         return queueFactory.newTaskQueue(DEFAULT_MAX_PENDING_TASKS);
@@ -446,6 +446,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         for (;;) {      // for循环 执行任务队列中得任务
             try {
                 try {
+                    // 获取select事件
                     switch (selectStrategy.calculateStrategy(selectNowSupplier, hasTasks())) {
                     case SelectStrategy.CONTINUE:
                         continue;
@@ -505,7 +506,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     try {
                         processSelectedKeys();
                     } finally {
-                        // Ensure we always run tasks.
+                        // Ensure we always run tasks. 运行任务
                         runAllTasks();
                     }
                 } else {
@@ -631,7 +632,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
             final Object a = k.attachment();
 
-            if (a instanceof AbstractNioChannel) {
+            if (a instanceof AbstractNioChannel) {    // 拿到 NioServerSocketChannel
                 processSelectedKey(k, (AbstractNioChannel) a);
             } else {
                 @SuppressWarnings("unchecked")
@@ -652,7 +653,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
     private void processSelectedKey(SelectionKey k, AbstractNioChannel ch) {
         final AbstractNioChannel.NioUnsafe unsafe = ch.unsafe();
-        if (!k.isValid()) {
+        if (!k.isValid()) { // 验证key
             final EventLoop eventLoop;
             try {
                 eventLoop = ch.eventLoop();
@@ -675,10 +676,10 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
 
         try {
-            int readyOps = k.readyOps();
+            int readyOps = k.readyOps();    // 拿到SelectionKey的读到的事件
             // We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise
             // the NIO JDK channel implementation may throw a NotYetConnectedException.
-            if ((readyOps & SelectionKey.OP_CONNECT) != 0) {
+            if ((readyOps & SelectionKey.OP_CONNECT) != 0) { // 此时是连接事件
                 // remove OP_CONNECT as otherwise Selector.select(..) will always return without blocking
                 // See https://github.com/netty/netty/issues/924
                 int ops = k.interestOps();
@@ -689,15 +690,15 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             }
 
             // Process OP_WRITE first as we may be able to write some queued buffers and so free memory.
-            if ((readyOps & SelectionKey.OP_WRITE) != 0) {
+            if ((readyOps & SelectionKey.OP_WRITE) != 0) {  //  写事件
                 // Call forceFlush which will also take care of clear the OP_WRITE once there is nothing left to write
                 ch.unsafe().forceFlush();
             }
 
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
-            if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
-                unsafe.read();
+            if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {   // read事件
+                unsafe.read();  // read中做了很多事情，1，拿到客户端socketChannel，2，读取事件，触发pipeline中的读取read事件，设置读取的promise，3，如果有异常，触发pipeline的异常事件，4，触发读取完成事件，
             }
         } catch (CancelledKeyException ignored) {
             unsafe.close(unsafe.voidPromise());

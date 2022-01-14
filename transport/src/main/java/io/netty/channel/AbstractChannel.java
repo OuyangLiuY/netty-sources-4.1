@@ -449,6 +449,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         }
 
         @Override
+        // 将eventLoop和 ChannelPromise 进行绑定
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             if (eventLoop == null) {
                 throw new NullPointerException("eventLoop");
@@ -464,14 +465,16 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             AbstractChannel.this.eventLoop = eventLoop;
-            // 主线程调用注册
+            // 主线程调用register，或者是eventLoop的next执行器进行事件注册操作，一般返回false
             if (eventLoop.inEventLoop()) {
                 register0(promise);
             } else {
-                try {
+                try {   // 在当前eventLoop线程中调用run执行具体的注册操作
                     eventLoop.execute(new Runnable() {
                         @Override
                         public void run() {
+                            // 开始实际的register操作
+                            System.out.println(Thread.currentThread().getName());
                             register0(promise);
                         }
                     });
@@ -485,7 +488,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 }
             }
         }
-        // 注册
+        // 实际注册
         private void register0(ChannelPromise promise) {
             try {
                 // check if the channel is still open as it could be closed in the mean time when the register
@@ -494,7 +497,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                     return;
                 }
                 boolean firstRegistration = neverRegistered;
-                doRegister();   // 模板方法，用于
+                doRegister();   // 模板方法，用于子类实现,拿到selectKey
                 neverRegistered = false;
                 registered = true;
 
@@ -503,7 +506,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
-                pipeline.fireChannelRegistered();
+                pipeline.fireChannelRegistered();   // 触发pipeline中得channel注册事件
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.
                 if (isActive()) {
@@ -842,7 +845,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             try {
-                doBeginRead();
+                doBeginRead();  // 设置待读取状态，设置感兴趣事件集
             } catch (final Exception e) {
                 invokeLater(new Runnable() {
                     @Override

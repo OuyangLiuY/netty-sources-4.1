@@ -15,9 +15,12 @@
  */
 package io.netty.example.echo;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.util.Arrays;
 
 /**
  * Handler implementation for the echo server.
@@ -27,6 +30,10 @@ public class EchoServerHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        ByteBuf byteBuf = (ByteBuf) msg;
+        byte[] res = new byte[byteBuf.readableBytes()];
+        byteBuf.readBytes(res);
+        System.out.println(Arrays.toString(res));
         ctx.write(msg);
     }
 

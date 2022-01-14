@@ -1430,7 +1430,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             readIfIsAutoRead();
         }
 
-        private void readIfIsAutoRead() {
+        private void readIfIsAutoRead() {   // 设置了自动读取状态，调用channel读取方法，尝试拿到selectKey的读事件
             if (channel.config().isAutoRead()) {
                 channel.read();
             }

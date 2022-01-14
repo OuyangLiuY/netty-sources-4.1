@@ -191,7 +191,7 @@ public class AdaptiveRecvByteBufAllocator extends DefaultMaxMessagesRecvByteBufA
 
     @SuppressWarnings("deprecation")
     @Override
-    public Handle newHandle() {
+    public Handle newHandle() { // 创建事件handler
         return new HandleImpl(minIndex, maxIndex, initial);
     }
 

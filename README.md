@@ -8,11 +8,12 @@
 4. 切记钻牛角尖
 
 ## Mark
-```C
+```text
  // 内存slab高速着色
  // 43分钟
  // 内存释放
  // DefaultHandle
+ 问题: 
 ```
 ## 1、Netty本地导入IDEA编译
 
@@ -115,6 +116,14 @@ Netty核心模块：
 
 ## 6、Netty 协议管理
 
+netty协议出现的问题：
 
+1. 粘包，拆包：
+
+   解决方案：基于特殊标记(DelimiterBasedFrameDecoder)，固定大小传递(FixedLengthFrameDecoder)，基于长度字段（LengthFieldBasedFrameDecoder）
+
+2. 线头阻塞：是http协议某个端口在请求，但是其他请求又来，那么就阻塞等待，
+
+   解决方案：使用IO多路复用(多个端口)和线程池
 
 ## 7、总结

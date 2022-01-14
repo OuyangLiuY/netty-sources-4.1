@@ -79,9 +79,9 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final AtomicReferenceFieldUpdater<SingleThreadEventExecutor, ThreadProperties> PROPERTIES_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(
                     SingleThreadEventExecutor.class, ThreadProperties.class, "threadProperties");
-
+    // 任务队列
     private final Queue<Runnable> taskQueue;
-
+    // 当前线程对象
     private volatile Thread thread;
     @SuppressWarnings("unused")
     private volatile ThreadProperties threadProperties;
@@ -92,6 +92,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private final Set<Runnable> shutdownHooks = new LinkedHashSet<Runnable>();
     private final boolean addTaskWakesUp;
     private final int maxPendingTasks;
+    // 拒绝策略
     private final RejectedExecutionHandler rejectedExecutionHandler;
 
     private long lastExecutionTime;
@@ -102,7 +103,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private volatile long gracefulShutdownQuietPeriod;
     private volatile long gracefulShutdownTimeout;
     private long gracefulShutdownStartTime;
-
+    // 终止promise
     private final Promise<?> terminationFuture = new DefaultPromise<Void>(GlobalEventExecutor.INSTANCE);
 
     /**
@@ -458,13 +459,13 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * @return {@code true} if at least one task was executed.
      */
     protected final boolean runAllTasksFrom(Queue<Runnable> taskQueue) {
-        Runnable task = pollTaskFrom(taskQueue);
+        Runnable task = pollTaskFrom(taskQueue);    // 尝试拿出第一个task
         if (task == null) {
             return false;
         }
         for (;;) {
-            safeExecute(task);
-            task = pollTaskFrom(taskQueue);
+            safeExecute(task);   // 执行task
+            task = pollTaskFrom(taskQueue); // 拿到下一个task，
             if (task == null) {
                 return true;
             }
@@ -527,7 +528,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
 
-        afterRunningAllTasks(); // 尝试运行所有得任务
+        afterRunningAllTasks(); // 尝试运行子类得任务
         this.lastExecutionTime = lastExecutionTime;
         return true;
     }
@@ -871,15 +872,15 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     @Override
-    public void execute(Runnable task) {
+    public void execute(Runnable task) {    // 所有的eventLoop.execute调用，很重要，执行其execute调用中的run方法
         if (task == null) {
             throw new NullPointerException("task");
         }
 
         boolean inEventLoop = inEventLoop();
         addTask(task);                  // 将任务添加到队列taskQueue
-        if (!inEventLoop) {
-            startThread();
+        if (!inEventLoop) { // 当前线程不属于eventLoop
+            startThread();  // 开始执行
             if (isShutdown()) {
                 boolean reject = false;
                 try {
@@ -995,10 +996,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final long SCHEDULE_PURGE_INTERVAL = TimeUnit.SECONDS.toNanos(1);
 
     private void startThread() {
-        if (state == ST_NOT_STARTED) {
-            if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
+        if (state == ST_NOT_STARTED) {  // 状态检测
+            if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {    // cas更新成功，拿到锁，执行
                 boolean success = false;
                 try {
+                    // 执行
                     doStartThread();
                     success = true;
                 } finally {
@@ -1039,14 +1041,15 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 }
 
                 boolean success = false;
-                updateLastExecutionTime();
+                updateLastExecutionTime();  // 获取执行时间
                 try {
-                    // 调用对应socket实现如NioEventLoop中得run方法
+                    // 调用子类实现的run方法，如NioEventLoop中得run方法
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {
                     logger.warn("Unexpected exception from an event executor: ", t);
                 } finally {
+                    // 执行完毕之后检测状态，释放资源
                     for (;;) {
                         int oldState = state;
                         if (oldState >= ST_SHUTTING_DOWN || STATE_UPDATER.compareAndSet(

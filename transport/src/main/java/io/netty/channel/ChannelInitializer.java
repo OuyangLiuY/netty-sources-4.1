@@ -50,6 +50,9 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @param <C>   A sub-type of {@link Channel}
  */
+// ChannelInitializer,
+// ServerBootstrap: bootstrap.childHandler(new MyChannelInitializer())
+// Bootstrap: line 38~42 record how to code
 @Sharable
 public abstract class ChannelInitializer<C extends Channel> extends ChannelInboundHandlerAdapter {
 
@@ -75,13 +78,13 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     public final void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         // Normally this method will never be called as handlerAdded(...) should call initChannel(...) and remove
         // the handler.
-        if (initChannel(ctx)) {
+        if (initChannel(ctx)) { // 通道注册，回调initChannel方法，
             // we called initChannel(...) so we need to call now pipeline.fireChannelRegistered() to ensure we not
             // miss an event.
-            ctx.pipeline().fireChannelRegistered();
+            ctx.pipeline().fireChannelRegistered(); // 调用注册成功方法
 
             // We are done with init the Channel, removing all the state for the Channel now.
-            removeState(ctx);
+            removeState(ctx);   // 初始化Channel完成，从initMap中移除
         } else {
             // Called initChannel(...) before which is the expected behavior, so just forward the event.
             ctx.fireChannelRegistered();
@@ -104,6 +107,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
      */
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        // channel已经注册成功了，那么调用initChannel初始化方法，完成initChannel方法中类加载
         if (ctx.channel().isRegistered()) {
             // This should always be true with our current DefaultChannelPipeline implementation.
             // The good thing about calling initChannel(...) in handlerAdded(...) is that there will be no ordering
@@ -123,7 +127,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     }
 
     @SuppressWarnings("unchecked")
-    private boolean initChannel(ChannelHandlerContext ctx) throws Exception {
+    private boolean initChannel(ChannelHandlerContext ctx) throws Exception {   // handlerAdded或者register得时候调用该方法
         if (initMap.add(ctx)) { // Guard against re-entrance.
             try {
                 initChannel((C) ctx.channel());
@@ -134,7 +138,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
             } finally {
                 ChannelPipeline pipeline = ctx.pipeline();
                 if (pipeline.context(this) != null) {
-                    pipeline.remove(this);
+                    pipeline.remove(this);          // initHandler调用子类initChannel方法得任务完成了，那么从pipeline中移除
                 }
             }
             return true;

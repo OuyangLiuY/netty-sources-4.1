@@ -32,13 +32,16 @@ import java.util.List;
 /**
  * {@link ChannelInboundHandlerAdapter} which decodes bytes in a stream-like fashion from one {@link ByteBuf} to an
  * other Message type.
- *
+ *  解码bytes在类似流特点来在byteBuf的一种msg类型
  * For example here is an implementation which reads all readable bytes from
  * the input {@link ByteBuf} and create a new {@link ByteBuf}.
  *
  * <pre>
  *     public class SquareDecoder extends {@link ByteToMessageDecoder} {
  *         {@code @Override}
+ *         // in 输入
+ *         // out 输出
+ *         // ctx decodeHandler
  *         public void decode({@link ChannelHandlerContext} ctx, {@link ByteBuf} in, List&lt;Object&gt; out)
  *                 throws {@link Exception} {
  *             out.add(in.readBytes(in.readableBytes()));
@@ -52,10 +55,13 @@ import java.util.List;
  * {@link DelimiterBasedFrameDecoder}, {@link FixedLengthFrameDecoder}, {@link LengthFieldBasedFrameDecoder},
  * or {@link LineBasedFrameDecoder}.
  * <p>
- * If a custom frame decoder is required, then one needs to be careful when implementing
- * one with {@link ByteToMessageDecoder}. Ensure there are enough bytes in the buffer for a
- * complete frame by checking {@link ByteBuf#readableBytes()}. If there are not enough bytes
- * for a complete frame, return without modifying the reader index to allow more bytes to arrive.
+ * If a custom frame decoder is required, then one needs to be careful when implementing one with {@link ByteToMessageDecoder}.
+ *  如果需要自定义一个frameDecoder，那么在实现该接口时需要小心一些。
+ * Ensure there are enough bytes in the buffer for a complete frame by checking {@link ByteBuf#readableBytes()}.
+ * 通过检测确保在buffer中有足够的bytes，对于一个完整的frame
+ *  If there are not enough bytes for a complete frame,
+ *  return without modifying the reader index to allow more bytes to arrive.
+ *  如果没有足够的bytes对于一个完整的frame返回无需修改的reader index 允许更多的字节到达。
  * <p>
  * To check for complete frames without modifying the reader index, use methods like {@link ByteBuf#getInt(int)}.
  * One <strong>MUST</strong> use the reader index when using methods like {@link ByteBuf#getInt(int)}.
@@ -67,8 +73,10 @@ import java.util.List;
  * annotated with {@link @Sharable}.
  * <p>
  * Some methods such as {@link ByteBuf#readBytes(int)} will cause a memory leak if the returned buffer
- * is not released or added to the <tt>out</tt> {@link List}. Use derived buffers like {@link ByteBuf#readSlice(int)}
- * to avoid leaking memory.
+ * is not released or added to the <tt>out</tt> {@link List}.
+ *  使用ByteBuf#readBytes(int) 将造成一个内存泄漏，如果返回的buffer没有被释放或者被添加到out的list中时。
+ * Use derived buffers like {@link ByteBuf#readSlice(int)} to avoid leaking memory.
+ *  使用衍生的buffer如 ByteBuf#readSlice(int) 能够避免内存泄漏。为什么呢？（因为它跟ByteBuf共享一片内存空间）
  */
 public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter {
 

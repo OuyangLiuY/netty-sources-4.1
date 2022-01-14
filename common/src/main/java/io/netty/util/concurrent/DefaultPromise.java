@@ -243,7 +243,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             throw new InterruptedException(toString());
         }
 
-        checkDeadLock();
+        checkDeadLock();    // 检测死锁
 
         synchronized (this) {
             while (!isDone()) {
@@ -400,8 +400,8 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public Promise<V> sync() throws InterruptedException {
-        await();
-        rethrowIfFailed();
+        await();            // 等待线程执行完毕。promise拿到结果
+        rethrowIfFailed();  // 检测是否发生异常
         return this;
     }
 

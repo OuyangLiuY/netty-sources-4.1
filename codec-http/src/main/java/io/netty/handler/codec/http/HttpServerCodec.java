@@ -41,6 +41,7 @@ public final class HttpServerCodec extends CombinedChannelDuplexHandler<HttpRequ
      * {@code maxChunkSize (8192)}).
      */
     public HttpServerCodec() {
+        // 8192:body 大小？
         this(4096, 8192, 8192);
     }
 
