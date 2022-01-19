@@ -65,7 +65,7 @@ import java.util.List;
  *
  *   protected void decode({@link ChannelHandlerContext} ctx,
  *                           {@link ByteBuf} buf) throws Exception {
- *
+ *      // 直接拿固定长度，如果没有，抛异常，上层获取异常，尝试继续读取
  *     out.add(buf.readBytes(buf.readInt()));
  *   }
  * }

@@ -88,7 +88,7 @@ public abstract class MessageToMessageEncoder<I> extends ChannelOutboundHandlerA
                 try {
                     encode(ctx, cast, out);
                 } finally {
-                    ReferenceCountUtil.release(cast);
+                    ReferenceCountUtil.release(cast);   // 释放HttpResponse对象，也就是释放底层buf
                 }
 
                 if (out.isEmpty()) {
@@ -109,7 +109,7 @@ public abstract class MessageToMessageEncoder<I> extends ChannelOutboundHandlerA
             if (out != null) {
                 final int sizeMinusOne = out.size() - 1;
                 if (sizeMinusOne == 0) {
-                    ctx.write(out.getUnsafe(0), promise);
+                    ctx.write(out.getUnsafe(0), promise);   // 调用HeadContext中的write方法，将msg写入到输出缓冲区中
                 } else if (sizeMinusOne > 0) {
                     // Check if we can use a voidPromise for our extra writes to reduce GC-Pressure
                     // See https://github.com/netty/netty/issues/2525

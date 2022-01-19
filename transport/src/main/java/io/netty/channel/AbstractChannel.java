@@ -885,12 +885,13 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 ReferenceCountUtil.release(msg);
                 return;
             }
-
+            // 将msg放入到输出缓冲区
             outboundBuffer.addMessage(msg, size, promise);
         }
 
         @Override
         public final void flush() {
+            // ctx.flush(),调用HeadContext中此方法，完成数据写回socket操作
             assertEventLoop();
 
             ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
@@ -932,6 +933,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             try {
+                // 实际写入操作
                 doWrite(outboundBuffer);
             } catch (Throwable t) {
                 if (t instanceof IOException && config().isAutoClose()) {
